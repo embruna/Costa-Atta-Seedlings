@@ -159,7 +159,7 @@ humCR<-ggplot(NEST.DATA_CR, aes(x=location, y=soil.humid.surface)) +
   xlab("Plot Location")
 humCR<-humCR+ggtitle("E")
 #peak,tempCR<-peak,tempCR + scale_x_continuous(breaks = seq(0, 24, 2), limits = c(0, 24))
-peak.tempCR<-peak.tempCR + scale_y_continuous(breaks = seq(2, 6, 2), limits = c(2, 6))
+humCR<-humCR + scale_y_continuous(breaks = seq(2, 6, 2), limits = c(2, 6))
 humCR<-humCR+theme_classic()+theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
                                                panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), #sets colors of axes
                                                plot.title = element_text(hjust=0.05, vjust=-1.8, face="bold", size=18),        #Sets title size, style, location
@@ -186,7 +186,7 @@ humCD<-ggplot(NEST.DATA_CR, aes(x=location, y=soil.humid.surface)) +
   xlab("Plot Location")
 humCD<-humCD+ggtitle("F")
 #peak,tempCR<-peak,tempCR + scale_x_continuous(breaks = seq(0, 24, 2), limits = c(0, 24))
-peak.tempCR<-peak.tempCR + scale_y_continuous(breaks = seq(2, 6, 2), limits = c(2, 6))
+humCD<-humCD+ scale_y_continuous(breaks = seq(2, 6, 2), limits = c(2, 6))
 humCD<-humCD+theme_classic()+theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
                                    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), #sets colors of axes
                                    plot.title = element_text(hjust=0.05, vjust=-1.8, face="bold", size=18),        #Sets title size, style, location
@@ -214,8 +214,8 @@ humCD
 #   ylab("Deep soil humidity") +    
 #   xlab("Plot Location")
 # deep.humCR<-deep.humCR+ggtitle("G")
-# #peak,tempCR<-peak,tempCR + scale_x_continuous(breaks = seq(0, 24, 2), limits = c(0, 24))
-# #peak,tempCR<-peak,tempCR + scale_y_continuous(breaks = seq(0, 90, 15), limits = c(0, 90))
+# #deep.humCR<-deep.humCR + scale_x_continuous(breaks = seq(0, 24, 2), limits = c(0, 24))
+# #deep.humCRR<-deep.humCR + scale_y_continuous(breaks = seq(0, 90, 15), limits = c(0, 90))
 # deep.humCR<-deep.humCR+theme_classic()+theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
 #                                    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), #sets colors of axes
 #                                    plot.title = element_text(hjust=0.05, vjust=-1.8, face="bold", size=18),        #Sets title size, style, location
@@ -241,8 +241,8 @@ humCD
 #   ylab("Deep soil humidity") +    
 #   xlab("Plot Location")
 # deep.humCD<-deep.humCD+ggtitle("H")
-# #peak,tempCR<-peak,tempCR + scale_x_continuous(breaks = seq(0, 24, 2), limits = c(0, 24))
-# #peak,tempCR<-peak,tempCR + scale_y_continuous(breaks = seq(0, 90, 15), limits = c(0, 90))
+# #deep.humCD<-deep.humCD+ scale_x_continuous(breaks = seq(0, 24, 2), limits = c(0, 24))
+# #deep.humCD<-deep.humCD + scale_y_continuous(breaks = seq(0, 90, 15), limits = c(0, 90))
 # deep.humCD<-deep.humCD+theme_classic()+theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
 #                                              panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), #sets colors of axes
 #                                              plot.title = element_text(hjust=0.05, vjust=-1.8, face="bold", size=18),        #Sets title size, style, location
