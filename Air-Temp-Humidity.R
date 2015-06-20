@@ -1,3 +1,24 @@
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(grid)
+library(gridExtra)
+
+#CLear out everything from the environment
+rm(list=ls())
+
+
+##################
+#################
+###DATA ENTRY AND CLEANUP
+##################
+#################
+#Step 1: load the individual CSV files and save them as dataframes
+setwd("/Users/emiliobruna/Dropbox/Alan/Data/Capitulo2")
+NEST.DATA<-read.csv("ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+VEG<-read.csv("ActiveNests_CensoVeg_1.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+AIRTEMPHUMID<-read.csv("ActiveNests_TempAirHumid_7.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+
 
 # count.ATH<-as.data.frame(table(AIRTEMPHUMID$nest, AIRTEMPHUMID$habitat)) #This is just to see how many nests in each habitat type
 ATH.FIG<-na.omit(AIRTEMPHUMID)  #create a dataframe to make this figure
