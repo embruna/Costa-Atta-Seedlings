@@ -175,4 +175,4 @@ HumidCD<- HumidCD + theme_bw()+theme(panel.border = element_blank(), panel.grid.
 HumidCD
 
 main = textGrob("Air Temperature and Humidity Near and Far from Nests", vjust = 0, gp = gpar(fontface = "bold", fontsize = 20))
-FigATH<-grid.arrange(TempCR,TempCD, HumidCR,HumidCD, sub=main, ncol=2, nrow=2) 
+FigATH<-grid.arrange(TempCR,TempCD, HumidCR,HumidCD, sub=main, ncol=2, nrow=2)
