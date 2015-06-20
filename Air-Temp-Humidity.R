@@ -84,14 +84,14 @@ TempCR
 #####
 pd<-position_dodge(0.4)
 #Line plot
-my_grob_CR = grobTree(textGrob("B", x=0.05,  y=.95, gp=gpar(col="black", fontsize=15, fontface="bold")))
+my_grob_CD = grobTree(textGrob("B", x=0.05,  y=.95, gp=gpar(col="black", fontsize=15, fontface="bold")))
 
 #note the filter means only doing with nest plots
 TempCD<-ggplot(filter(ATH.FIG, Habitat=="Cerrado Denso"), aes(x = time, y = Temperature, col=Location)) + 
   geom_errorbar(aes(ymin=Temperature-SD.temperature, ymax=Temperature+SD.temperature), width=.75, position=pd)+
   ylab("Air temperature (mean °C ± SD)") +  
   xlab("Hour")+geom_line()+geom_point(size=3)+
-  annotation_custom(my_grob_CR) 
+  annotation_custom(my_grob_CD) 
 
 TempCD<-TempCD+ggtitle("Cerrado denso")
 TempCD<-TempCD + scale_colour_manual(values=c("darkred", "darkblue"))  #I chose my own colors for the lines
