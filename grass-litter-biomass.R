@@ -70,14 +70,14 @@ grass.plotCR
 ###########
 ## grass plot Cerrado Denso
 ###########
-my_grob_CR = grobTree(textGrob("B", x=0.05,  y=.95, gp=gpar(col="black", fontsize=18, fontface="bold")))
+my_grob_CD = grobTree(textGrob("B", x=0.05,  y=.95, gp=gpar(col="black", fontsize=18, fontface="bold")))
 
 
 grass.plotCD<-ggplot(NEST.DATA_CD, aes(x=location, y=grass.bmass)) +
   geom_boxplot(outlier.colour = "darkblue", outlier.size = 3)+
   ylab("grass biomass (g)") +  
 #   xlab("Plot Location")+
-annotation_custom(my_grob_CR)
+annotation_custom(my_grob_CD)
 grass.plotCD<-grass.plotCD+ggtitle("Cerrado Denso")
 #grass.plotCD<-grass.plotCD + scale_x_continuous(breaks = seq(0, 24, 2), limits = c(0, 24))
 #grass.plotCD<-grass.plotCD + scale_y_continuous(breaks = seq(0, 90, 15), limits = c(0, 90))
