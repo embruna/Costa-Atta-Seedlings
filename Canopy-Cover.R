@@ -47,7 +47,7 @@ my_grob_CR = grobTree(textGrob("A", x=0.05,  y=.95, gp=gpar(col="black", fontsiz
 CoverCR<-ggplot(NEST.DATA_CR, aes(x=location, y=perc.cover)) + 
   geom_boxplot(outlier.colour = "darkblue", outlier.size = 3)+
   geom_boxplot(outlier.colour = "darkblue", outlier.size = 3)+
-  ylab("Camopy cover (mean % ± SD)") +  
+  ylab("% Camopy cover (medoan") +  
   #   xlab("Plot Location")+
   annotation_custom(my_grob_CR)
 CoverCR<-CoverCR+ggtitle("Cerrado Ralo")
