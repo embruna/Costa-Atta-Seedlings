@@ -20,8 +20,6 @@ rm(list=ls())
 #Step 1: load the individual CSV files and save them as dataframes
 setwd("/Users/emiliobruna/Dropbox/Alan/Data/Capitulo2")
 NEST.DATA<-read.csv("ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
-VEG<-read.csv("ActiveNests_CensoVeg_1.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
-AIRTEMPHUMID<-read.csv("ActiveNests_TempAirHumid_7.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 #make plot locations an ordered factor nest<adjacent<far
 NEST.DATA$location=factor(NEST.DATA$location, levels=c("nest","adjacent", "far"), ordered=TRUE)
 
@@ -45,10 +43,9 @@ NEST.DATA.PCA<-na.omit(NEST.DATA.PCA)
 # env.vars <- log(NEST.DATA.PCA[, 5:18]+1)
 # no transformation as per HLV
 env.vars <- NEST.DATA.PCA[,5:18]
-site.cats <- NEST.DATA.PCA[, 1:4]
+site.cats <- NEST.DATA.PCA[, 1:5]
 
 # Exclude the following: grass biomass, canopy.cover, deep soil humidity 
-env.vars$perc.cover<-NULL
 env.vars$grass.bmass<-NULL
 env.vars$humid.soil.deep<-NULL
 env.vars$peak.soil.temp<-NULL
@@ -86,10 +83,103 @@ summary(nest.env.pca)
 # install_github("ggbiplot", "vqv")
 # library(ggbiplot)
 # ?ggbiplot for more info on arguments you can change and % used to draw ellipses aroudnd points
+
+habitat<-site.cats$location
+cover<-site.cats$perc.cover
+point.size<-cover*0.1
 g <- ggbiplot(nest.env.pca, obs.scale = 1, var.scale = 1, 
-              groups = site.cats$location, ellipse = TRUE, 
-              circle = TRUE)
-g <- g + scale_color_discrete(name = '')
-g <- g + theme(legend.direction = 'horizontal', 
-               legend.position = 'top')
+              group = habitat, ellipse = TRUE, 
+              circle = TRUE, varname.size=3)+
+  scale_colour_manual(values=c("blue", "red")) +
+  geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
+  #I chose my own colors for the lines
+g<-g + scale_x_continuous(breaks = seq(-4, 4, 2), limits = c(-5, 4)) # I adjusted X axis so that I could read the larger labels on arrows
+g<-g + scale_y_continuous(breaks = seq(-4, 4, 2), limits = c(-4,4)) # I adjusted Y axis so that I could read the larger labels on arrows
+
+
+g <- g + theme_classic()+theme(legend.direction = 'horizontal', 
+                legend.position = 'top',
+                axis.title.x=element_text(colour="black", size = 18, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
+                legend.title = element_blank(), #remove title of legend
+                legend.text = element_text(color="black", size=16),
+                plot.margin =unit(c(1,1,1,1.5), "lines")) +  #plot margin - top, right, bottom, left
+                guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
+
 print(g)
+
+
+#########################################
+## ANALYSES BASED ON PCA
+#########################################
+#nest.env.pca$x =  scores for each of the plots for each PCA
+
+pca.plot.scores<-(nest.env.pca$x) #this saves the matrix of PCA scores (all axes) for all plots 
+PCA.1<-as.data.frame(pca.plot.scores[,1]) #this saves the 1st column - PCA Axis 1 - as a dataframe
+PCA.2<-pca.plot.scores[,2]#this saves the 2nd column - PCA Axis 2 - as a dataframe
+GLM.DATA<-as.data.frame(cbind(habitat, cover, PCA.1, PCA.2))
+names(GLM.DATA)[3]<-"PCA1" #reaname the column
+names(GLM.DATA)[4]<-"PCA2" #rename the column
+
+#################
+## FOR PCA AXIS 1
+#################
+
+# GLM to these data with just an intercept (overall mean):
+glm1 = glm(PCA1~1,,family = gaussian, data = GLM.DATA)
+summary(glm1)
+
+# add a continuous predictor variable, fit the new glm and test it against a model with only an intercept:
+glm2 = glm(PCA1 ~ habitat ,data=GLM.DATA,family=gaussian)
+anova(glm1,glm2,test="Chisq")
+#Result: model 2 better fit
+
+#Add Percent cover as a covariate
+glm3 = glm(PCA1 ~ habitat + cover,data=GLM.DATA,family=gaussian)
+anova(glm2,glm3,test="Chisq")
+# looks like including cover is better than just habitat
+
+# Is there an interaction?
+glm4 = glm(PCA1 ~ habitat * cover,data=GLM.DATA,family=gaussian) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm4)
+anova(glm3,glm4,test="Chisq")
+#Doesn't look like including interaction provides better fit
+
+#################
+## FOR PCA AXIS 2
+#################
+
+# GLM to these data with just an intercept (overall mean):
+glm1b = glm(PCA2~1,,family = gaussian, data = GLM.DATA)
+summary(glm1b)
+
+# add a continuous predictor variable, fit the new glm and test it against a model with only an intercept:
+glm2b = glm(PCA2 ~ habitat ,data=GLM.DATA,family=gaussian)
+anova(glm1b,glm2b,test="Chisq")
+#Result: Nope
+
+#Add Percent cover as a covariate
+glm3b = glm(PCA2 ~ habitat + cover,data=GLM.DATA,family=gaussian)
+anova(glm1b,glm2b,test="Chisq")
+# nope - not better than just intercept
+
+# Is there an interaction?
+glm4b = glm(PCA2 ~ habitat * cover,data=GLM.DATA,family=gaussian) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm4b)
+anova(glm1b,glm4b,test="Chisq")
+#Doesn't look 
+
+
+
+
+
+
+lapply(models, summary)
+# for quesiton on dot colors posted on stack overflow
+# http://stackoverflow.com/questions/30968563/ggbiplot-how-to-maintain-group-colors-after-changing-point-size
+
+env.vars<-data.frame(replicate(5,sample(0:10,20,rep=TRUE)))
+cover<-c(89, 92, 72, 53, 88, 89, 71, 83, 71, 66, 23, 30,  5, 15, 57, 54,0, 23, 9, 16)
+habitat<-c("habitat1", "habitat2", "habitat1", "habitat2", "habitat1", "habitat2", "habitat1", "habitat2", "habitat1", "habitat2", "habitat1", "habitat2", "habitat1", "habitat2", "habitat1", "habitat2", "habitat1", "habitat2", "habitat1", "habitat2")
+point.size<-cover*0.1
