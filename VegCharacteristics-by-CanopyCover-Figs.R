@@ -7,11 +7,11 @@ library(gridExtra)
 #CLear out everything from the environment
 rm(list=ls())
 
-##################
-#################
-###DATA ENTRY AND CLEANUP
-##################
-#################
+################################################################################################
+################################################################################################
+### DATA ENTRY AND CLEANUP
+################################################################################################
+################################################################################################
 #Step 1: load the individual CSV files and save them as dataframes
 setwd("/Users/emiliobruna/Dropbox/Alan/Data/Capitulo2")
 NEST.DATA<-read.csv("ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
@@ -29,185 +29,25 @@ levels(NEST.DATA.FIG$location)[levels(NEST.DATA.FIG$location)=="far"]<-"10m from
 levels(NEST.DATA.FIG$location)[levels(NEST.DATA.FIG$location)=="nest"]<-"Center of nest"  
 levels(NEST.DATA.FIG$location)[levels(NEST.DATA.FIG$location)=="adjacent"]<-"Adjacent to nest" 
 
-##########################
-#####PLOT: LITTER BIOMASS
-##########################
-litter.fig<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = litter.bmass, col=location, fill=location)) + 
-  geom_point(shape=16, size = 3) +
-  ylab("litter biomass (mean g ± SD)") +
-  xlab("canopy cover (%)")+
-  ggtitle("A")+
-  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
-  geom_smooth(method=lm,   # Add linear regression lines
-              se=FALSE)    # Don't add shaded confidence region
-litter.fig<-litter.fig + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
-litter.fig<-litter.fig + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
-litter.fig<-litter.fig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
-litter.fig<- litter.fig + theme_classic()+
-  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
-                                   axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                   axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                   axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
-                                   legend.position = 'none',
-#                                   legend.title = element_blank(),   #Removes the Legend title
-#                                    legend.text = element_text(color="black", size=16),  
-#                                    legend.position = c(0.23,0.7),
-#                                    legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
-                                   plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
-  #guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
-
-litter.fig
-
-
-##########################
-#####PLOT: GRASS BIOMASS
-##########################
-grass.fig<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = grass.bmass, col=location, fill=location)) + 
-  geom_point(shape=16, size = 3) +
-  ylab("grass biomass (g)") +
-  xlab("canopy cover (%)")+
-  ggtitle("B")+
-  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
-  geom_smooth(method=lm,   # Add linear regression lines
-              se=FALSE)    # Don't add shaded confidence region
-grass.fig<-grass.fig + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
-# grass.fig<-grass.fig + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
-grass.fig<-grass.fig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
-grass.fig<- grass.fig + theme_classic()+
-  theme(plot.title = element_text(face="bold", size=18, vjust=-3.5, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
-        legend.title = element_blank(),   #Removes the Legend title
-        legend.text = element_text(color="black", size=16),  
-        legend.position = c(.9,.8),
-        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
-         # legend.position = 'none',
-         plot.margin =unit(c(0,1,2,1.5), "cm")) +  #plot margin - top, right, bottom, left
-   guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
-
-grass.fig
-
-
-
-##########################
-#####PLOT: SOIL HARDNESS
-##########################
-soil.pen<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = soil.pen, col=location, fill=location)) + 
-  geom_point(shape=16, size = 3) +
-  ylab("soil penetration (mm)") +
-  xlab("canopy cover (%)")+
-  ggtitle("C")+
-  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
-  geom_smooth(method=lm,   # Add linear regression lines
-              se=FALSE)    # Don't add shaded confidence region
-soil.pen<-soil.pen + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
-# soil.pen<-soil.pen + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
-soil.pen<-soil.pen + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
-soil.pen<- soil.pen + theme_classic()+
-  theme(plot.title = element_text(face="bold", size=18, vjust=-3.5, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
-        #         legend.title = element_blank(),   #Removes the Legend title
-        #         legend.text = element_text(color="black", size=16),  
-        #         legend.position = c(0.23,0.7),
-        #         legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
-        legend.position = 'none',
-        plot.margin =unit(c(0,1,0,1.5), "cm")) +  #plot margin - top, right, bottom, left
-        guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
-
-soil.pen
-
-
-
-##########################
-#####PLOT: SURFACE SOIL HUMIDITY
-##########################
-soil.humid<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = soil.humid.surface, col=location, fill=location)) + 
-  geom_point(shape=16, size = 3) +
-  ylab("surface soil humidity (%)") +
-  xlab("canopy cover (%)")+
-  ggtitle("D")+
-  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
-  geom_smooth(method=lm,   # Add linear regression lines
-              se=FALSE)    # Don't add shaded confidence region
-soil.humid<-soil.humid + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
-# soil.humid<-soil.humid + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
-soil.humid<-soil.humid + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
-soil.humid<- soil.humid + theme_classic()+
-  theme(plot.title = element_text(face="bold", size=18, vjust=-3.5, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
-                legend.title = element_blank(),   #Removes the Legend title
-                legend.text = element_text(color="black", size=16),  
-                legend.position = c(0.3,0.87),
-                legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
-       # legend.position = 'none'),
-        plot.margin =unit(c(0,1,0,1.5), "cm")) +  #plot margin - top, right, bottom, left
-        guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
-
-soil.humid
-
-
-
-##########################
-#####PLOT: SURFACE TEMP
-##########################
-peak.soil.temp<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = peak.soil.temp, col=location, fill=location)) + 
-  geom_point(shape=16, size = 3) +
-  ylab("soil temperature (°C))") +
-  xlab("canopy cover (%)")+
-  ggtitle("E")+
-  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
-  geom_smooth(method=lm,   # Add linear regression lines
-              se=FALSE)    # Don't add shaded confidence region
-peak.soil.temp<-peak.soil.temp + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
-# peak.soil.temp<-peak.soil.temp + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
-peak.soil.temp<-peak.soil.temp + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
-peak.soil.temp<- peak.soil.temp + theme_classic()+
-  theme(plot.title = element_text(face="bold", size=18, vjust=-3.5, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
-        #         legend.title = element_blank(),   #Removes the Legend title
-        #         legend.text = element_text(color="black", size=16),  
-        #         legend.position = c(0.23,0.7),
-        #         legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
-        legend.position = 'none',
-plot.margin =unit(c(0,1,2,1.5), "cm")) +  #plot margin - top, right, bottom, left
-guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
-
-peak.soil.temp
-
-
-##########################
-#####PALL TOGETHER
-##########################
-main = textGrob("ENVT CHAR as FUNCTION OF % CANOPY COVER", vjust = 0, gp = gpar(fontface = "bold", fontsize = 20))
-Soil.Fig<-grid.arrange(soil.pen, soil.humid, peak.soil.temp, sub=main, ncol=2, nrow=2)
-
-main = textGrob("ENVT CHAR as FUNCTION OF % CANOPY COVER", vjust = 1.5, gp = gpar(fontface = "bold", fontsize = 20))
-Bmass.Fig<-grid.arrange(litter.fig, grass.fig, sub=main, ncol=1, nrow=3)
-
-
-
-################################################################################################
-################################################################################################
-### FACETING: BIOMASS
-################################################################################################
-################################################################################################
-
 NEST.DATA.FIG<-rename(NEST.DATA.FIG, Grass = grass.bmass)
-NEST.DATA.FIG<-rename(NEST.DATA.FIG, Leaf litter = litter.bmass) 
-facet<-select(NEST.DATA.FIG,location, habitat,  perc.cover, Grasses, Litter)
-foo<-gather(facet, "variable", "value", 4:5)
+NEST.DATA.FIG<-rename(NEST.DATA.FIG, Litter = litter.bmass) 
+NEST.DATA.FIG<-rename(NEST.DATA.FIG, Hardness = soil.pen)
+NEST.DATA.FIG<-rename(NEST.DATA.FIG, Humidity = soil.humid.surface) 
+NEST.DATA.FIG<-rename(NEST.DATA.FIG, Temperature = peak.soil.temp) 
+################################################################################################
+################################################################################################
+### FACET PLOT: BIOMASS
+################################################################################################
+################################################################################################
+
+
+Env1<-select(NEST.DATA.FIG,location, habitat,  perc.cover, Grass, Litter)
+Env1<-gather(Env1, "variable", "value", 4:5)
 
 # my_grob_ENV1 = grobTree(textGrob("A", x=0.05,  y=.95, gp=gpar(col="black", fontsize=18, fontface="bold")))
 
 
-EnvFig1<-ggplot(foo, aes(x=perc.cover, y=value, col=location, fill=location)) + 
+EnvFig1<-ggplot(Env1, aes(x=perc.cover, y=value, col=location, fill=location)) + 
   geom_point(shape=16, size=3)+
 #   facet_grid(variable ~ .)+
   facet_wrap(~variable,nrow = 2,scales = "free")+
@@ -239,22 +79,22 @@ EnvFig1<- EnvFig1 + theme_classic()+
 
 EnvFig1
 
+
 ################################################################################################
 ################################################################################################
-### FACETING: SOIL
+### FACET PLOT: SOIL TEMP & HUMIDITY & HARDNESS
 ################################################################################################
 ################################################################################################
 
-NEST.DATA.FIG<-rename(NEST.DATA.FIG, Hardness = soil.pen)
-NEST.DATA.FIG<-rename(NEST.DATA.FIG, Humidity = soil.humid.surface) 
-NEST.DATA.FIG<-rename(NEST.DATA.FIG, Temperature = peak.soil.temp) 
-facet2<-select(NEST.DATA.FIG,location, habitat, perc.cover,  Hardness,  Humidity,  Temperature)
-foo2<-gather(facet2, "variable", "value", 4:6)
+
+
+Env2<-select(NEST.DATA.FIG,location, habitat, perc.cover,  Hardness,  Humidity,  Temperature)
+Env2<-gather(Env2, "variable", "value", 4:6)
 
 # my_grob_ENV1 = grobTree(textGrob("A", x=0.05,  y=.95, gp=gpar(col="black", fontsize=18, fontface="bold")))
 
 
-EnvFig2<-ggplot(foo2, aes(x=perc.cover, y=value, col=location, fill=location)) + 
+EnvFig2<-ggplot(Env2, aes(x=perc.cover, y=value, col=location, fill=location)) + 
   geom_point(shape=16, size=3)+
   #   facet_grid(variable ~ .)+
   facet_wrap(~variable,nrow = 3,scales = "free")+
@@ -285,3 +125,181 @@ EnvFig2<- EnvFig2 + theme_classic()+
   guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
 
 EnvFig2
+
+
+
+
+
+
+
+################################################################################################
+################################################################################################
+### INDIVIDUAL PLOTS 
+################################################################################################
+################################################################################################
+
+
+
+##########################
+#####PLOT: LITTER BIOMASS
+##########################
+litter.fig<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = litter.bmass, col=location, fill=location)) + 
+  geom_point(shape=16, size = 3) +
+  ylab("litter biomass (mean g ± SD)") +
+  xlab("canopy cover (%)")+
+  ggtitle("A")+
+  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE)    # Don't add shaded confidence region
+litter.fig<-litter.fig + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+litter.fig<-litter.fig + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
+litter.fig<-litter.fig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
+litter.fig<- litter.fig + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+        legend.position = 'none',
+        #                                   legend.title = element_blank(),   #Removes the Legend title
+        #                                    legend.text = element_text(color="black", size=16),  
+        #                                    legend.position = c(0.23,0.7),
+        #                                    legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+#guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
+
+litter.fig
+
+
+##########################
+#####PLOT: GRASS BIOMASS
+##########################
+grass.fig<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = grass.bmass, col=location, fill=location)) + 
+  geom_point(shape=16, size = 3) +
+  ylab("grass biomass (g)") +
+  xlab("canopy cover (%)")+
+  ggtitle("B")+
+  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE)    # Don't add shaded confidence region
+grass.fig<-grass.fig + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+# grass.fig<-grass.fig + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
+grass.fig<-grass.fig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
+grass.fig<- grass.fig + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3.5, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        legend.position = c(.9,.8),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        # legend.position = 'none',
+        plot.margin =unit(c(0,1,2,1.5), "cm")) +  #plot margin - top, right, bottom, left
+  guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
+
+grass.fig
+
+
+
+##########################
+#####PLOT: SOIL HARDNESS
+##########################
+soil.pen<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = soil.pen, col=location, fill=location)) + 
+  geom_point(shape=16, size = 3) +
+  ylab("soil penetration (mm)") +
+  xlab("canopy cover (%)")+
+  ggtitle("C")+
+  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE)    # Don't add shaded confidence region
+soil.pen<-soil.pen + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+# soil.pen<-soil.pen + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
+soil.pen<-soil.pen + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
+soil.pen<- soil.pen + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3.5, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
+        #         legend.title = element_blank(),   #Removes the Legend title
+        #         legend.text = element_text(color="black", size=16),  
+        #         legend.position = c(0.23,0.7),
+        #         legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        legend.position = 'none',
+        plot.margin =unit(c(0,1,0,1.5), "cm")) +  #plot margin - top, right, bottom, left
+  guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
+
+soil.pen
+
+
+
+##########################
+#####PLOT: SURFACE SOIL HUMIDITY
+##########################
+soil.humid<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = soil.humid.surface, col=location, fill=location)) + 
+  geom_point(shape=16, size = 3) +
+  ylab("surface soil humidity (%)") +
+  xlab("canopy cover (%)")+
+  ggtitle("D")+
+  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE)    # Don't add shaded confidence region
+soil.humid<-soil.humid + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+# soil.humid<-soil.humid + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
+soil.humid<-soil.humid + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
+soil.humid<- soil.humid + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3.5, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        legend.position = c(0.3,0.87),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        # legend.position = 'none'),
+        plot.margin =unit(c(0,1,0,1.5), "cm")) +  #plot margin - top, right, bottom, left
+  guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
+
+soil.humid
+
+
+
+##########################
+#####PLOT: SURFACE TEMP
+##########################
+peak.soil.temp<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = peak.soil.temp, col=location, fill=location)) + 
+  geom_point(shape=16, size = 3) +
+  ylab("soil temperature (°C))") +
+  xlab("canopy cover (%)")+
+  ggtitle("E")+
+  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE)    # Don't add shaded confidence region
+peak.soil.temp<-peak.soil.temp + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+# peak.soil.temp<-peak.soil.temp + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
+peak.soil.temp<-peak.soil.temp + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
+peak.soil.temp<- peak.soil.temp + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3.5, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
+        #         legend.title = element_blank(),   #Removes the Legend title
+        #         legend.text = element_text(color="black", size=16),  
+        #         legend.position = c(0.23,0.7),
+        #         legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        legend.position = 'none',
+        plot.margin =unit(c(0,1,2,1.5), "cm")) +  #plot margin - top, right, bottom, left
+  guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
+
+peak.soil.temp
+
+
+##########################
+#####PALL TOGETHER
+##########################
+main = textGrob("ENVT CHAR as FUNCTION OF % CANOPY COVER", vjust = 0, gp = gpar(fontface = "bold", fontsize = 20))
+Soil.Fig<-grid.arrange(soil.pen, soil.humid, peak.soil.temp, sub=main, ncol=2, nrow=2)
+
+main = textGrob("ENVT CHAR as FUNCTION OF % CANOPY COVER", vjust = 1.5, gp = gpar(fontface = "bold", fontsize = 20))
+Bmass.Fig<-grid.arrange(litter.fig, grass.fig, sub=main, ncol=1, nrow=3)
+
+
