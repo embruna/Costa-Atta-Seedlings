@@ -146,6 +146,8 @@ summary(glm4)
 anova(glm3,glm4,test="Chisq")
 #Doesn't look like including interaction provides better fit
 
+AIC(glm1, glm2,glm3,glm4)
+
 #################
 ## FOR PCA AXIS 2
 #################
@@ -161,6 +163,7 @@ anova(glm1b,glm2b,test="Chisq")
 
 #Add Percent cover as a covariate
 glm3b = glm(PCA2 ~ habitat + cover,data=GLM.DATA,family=gaussian)
+summary(glm3b)
 anova(glm1b,glm2b,test="Chisq")
 # nope - not better than just intercept
 
@@ -170,12 +173,55 @@ summary(glm4b)
 anova(glm1b,glm4b,test="Chisq")
 #Doesn't look 
 
+AIC(glm1b, glm2b,glm3b,glm4b)
+
+#################
+## PLOTS
+#################
+
+PCAfigData<-gather(GLM.DATA, "Axis", "PCA.Score", 3:4)
+
+# my_grob_ENV1 = grobTree(textGrob("A", x=0.05,  y=.95, gp=gpar(col="black", fontsize=18, fontface="bold")))
+
+
+PCAfig<-ggplot(PCAfigData, aes(x=cover, y=PCA.Score, col=habitat, fill=habitat)) + 
+  geom_point(shape=16, size=3)+
+  #   facet_grid(variable ~ .)+
+  facet_wrap(~Axis,nrow = 2,scales = "free")+
+  ylab("PCA Score") +  
+  xlab("Canopy cover (%)")+
+  geom_smooth(method=lm,se=FALSE)   # Add linear regression lines, Don't add shaded confidence region
+# +annotation_custom(my_grob_ENV1)
+PCAfig<-PCAfig + scale_colour_manual(values=c("blue", "red"))  #I chose my own colors for the lines
+PCAfig<-PCAfig + scale_y_continuous(breaks = seq(-4, 4, 1), limits = c(-4.5, 4.5))
+PCAfig<-PCAfig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
+# 
+
+
+PCAfig<- PCAfig + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3.5, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 18, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
+        panel.margin = unit(2, "lines"), #space between facets
+        axis.line = element_line(colour = "black"), #sets colors of axes
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),
+        legend.position = c(0.9,0.95),
+        strip.text.x = element_text(size=18, colour="black", face="bold", vjust=-1.4, hjust=.05),
+        strip.background = element_blank(),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'), #box around legend
+        plot.margin =unit(c(0,1,2,1.5), "cm")) +  #plot margin - top, right, bottom, left
+  guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
+
+PCAfig
 
 
 
 
 
-lapply(models, summary)
+
+
 # for quesiton on dot colors posted on stack overflow
 # http://stackoverflow.com/questions/30968563/ggbiplot-how-to-maintain-group-colors-after-changing-point-size
 
