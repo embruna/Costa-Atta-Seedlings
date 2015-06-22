@@ -43,9 +43,8 @@ str(NEST.DATA)
 str(VEG)
 str(AIRTEMPHUMID)
 
-
-
-# Use Cerrado Ralo (CR) and Cerrado Denso (CD) in analyse
+# Use Cerrado Ralo (CR) and Cerrado Denso (CD) in analyses
+#nest dataset
 NEST.DATA_both<-NEST.DATA[NEST.DATA$habitat=="CR"|NEST.DATA$habitat=="CD",] #both habitats
 NEST.DATA_both <- droplevels(NEST.DATA_both)
 
@@ -54,6 +53,143 @@ NEST.DATA_CR <- droplevels(NEST.DATA_CR)
 
 NEST.DATA_CD<-NEST.DATA[NEST.DATA$habitat=="CD",] #only CD
 NEST.DATA_CD <- droplevels(NEST.DATA_CD)
+
+### VEG dataset
+VEG_both<-VEG[VEG$habitat=="CR"|VEG$habitat=="CD",] #both habitats
+VEG_both <- droplevels(VEG_both)
+
+VEG_CR<-VEG[VEG$habitat=="CR",] #only CR
+VEG_CR <- droplevels(VEG_CR)
+
+VEG_CD<-VEG[VEG$habitat=="CD",] #only CD
+VEG_CD <- droplevels(VEG_CD)
+
+
+###########################################################
+####### COUNT OF SEEDLINGS AND SPP RICH IN PLOTS ##########
+###########################################################
+VEG_both<-VEG[VEG$habitat=="CR"| VEG$habitat=="CD",] #both habitats
+VEG_both <- droplevels(VEG_both)
+
+VEG_both$ht_cm<-as.numeric(VEG_both$ht_cm)
+VEG_both$nest<-as.factor(VEG_both$nest)
+summary(VEG_both)
+str(VEG_both)
+#Remove the NA
+VEG_both_summary<-na.omit(VEG_both)
+VEG_both_summary<-as.data.frame(VEG_both_summary)
+summary(VEG_both_summary)
+str(VEG_both_summary)
+
+# can test with this: if it works, and gives you groups, then all is good. if not restart
+# iris %>%
+#   group_by(Species) %>%
+#   summarize(meanSepLength=mean(Sepal.Length)) 
+
+#VEG_both_summary$species<-toString(VEG_both_summary$species)
+
+
+#Number of plants in each plot  group by nest and location of plot and count 
+count.df<-VEG_both_summary %>%
+  group_by(nest, location) %>%
+  summarise(count = n())
+count.df
+
+#too see hpw many species each plot had, first reshape so that the data are in wide fomr
+require(reshape2)
+spp.df.lomg<-select(VEG_both_summary, nest, location, species) #is there a dplyr equivalent?????
+spp.df.wide<-dcast(spp.df.lomg, nest+location ~ species)
+spp.df.wide<-spp.df.wide[,c(3:197)]
+spp.df<-rowSums(spp.df.wide != 0)
+
+sdlgs<-cbind(count.df, spp.df)
+str(sdlgs)
+
+
+#add % cover
+sdlgs.perc.cover<-select(NEST.DATA, nest, location, perc.cover)
+str(sdlgs.perc.cover)
+test<-left_join(sdlgs, sdlgs.perc.cover, by = "location")
+
+
+
+
+glm.slg = glm(count ~ location * cover,data=GLM.DATA,family=gaussian) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm4b)
+anova(glm1b,glm4b,test="Chisq")
+
+
+###############
+### PAIRED TEST
+###############
+
+
+#need to spread data into wide form to take the diff between the nest and far plots
+wide1<-select(sdlgs, nest, location, count)
+wide1<-spread(wide1,location,count, fill=0)
+wide2<-select(sdlgs, nest, location, spp.df)
+wide2<-spread(sdlgs,location,spp.dff, fill=0)
+
+
+
+
+
+
+
+
+foo3<-select(VEG_both_summary, nest, location, species)
+foo3<-group_by(foo3, nest, location)
+
+foo3<-foo2 %>% 
+  group_by(species) %>%
+  summarise(no_rows = length(species))
+
+
+
+
+
+foo2<-VEG_both_summary %>%
+  gather(nest, location, "species", 8) %>% 
+  group_by(owner,observation, Val) %>% 
+  summarise(n= n()) %>%
+  ungroup() %>%
+  spread(Val, n, fill=0)
+
+
+VEG_both_summary %>% 
+  summarise(VEG_both_summary, group_by(location, nest), ht_cm=sum(ht_cm))
+  
+  group_by(location) %>% 
+  summarise(ht_cm=sum(ht_cm))
+
+
+foo<-group_by(VEG_both_summary, location)
+foo<-VEG_both_summary %>%  
+  group_by(location) %>% 
+  summarise(mean(ht_cm))
+foo
+
+foo<-VEG_both_summary %>% group_by(location) %>% summarise(ht_cm=sum(ht_cm))
+
+summarise(iris, avg = mean(Sepal.Length))
+
+  
+  group_by(nest) & group_by(location) %>% summarise(maxht = max(ht_cm)) %>% arrange(maxht)
+
+
+VEG_both_summary 
+
+summarise(VEG_both, avg = mean(ht_cm))
+
+
+summarise(VEG_both, avg = mean(ht_cm))
+
+
+
+
+
+
+
 
 
 ##########################
