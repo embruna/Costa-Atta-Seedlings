@@ -113,7 +113,9 @@ print(g)
 #########################################
 ## ANALYSES BASED ON PCA
 #########################################
+
 #nest.env.pca$x =  scores for each of the plots for each PCA
+
 
 pca.plot.scores<-(nest.env.pca$x) #this saves the matrix of PCA scores (all axes) for all plots 
 PCA.1<-as.data.frame(pca.plot.scores[,1]) #this saves the 1st column - PCA Axis 1 - as a dataframe
@@ -121,6 +123,8 @@ PCA.2<-pca.plot.scores[,2]#this saves the 2nd column - PCA Axis 2 - as a datafra
 GLM.DATA<-as.data.frame(cbind(habitat, cover, PCA.1, PCA.2))
 names(GLM.DATA)[3]<-"PCA1" #reaname the column
 names(GLM.DATA)[4]<-"PCA2" #rename the column
+
+# Nice overview of GLMs here: http://plantecology.syr.edu/fridley/bio793/glm.html
 
 #################
 ## FOR PCA AXIS 1
