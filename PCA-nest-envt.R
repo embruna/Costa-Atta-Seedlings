@@ -3,7 +3,7 @@
 
 
 library(devtools)
-install_github("ggbiplot", "vqv")
+#install_github("ggbiplot", "vqv")
 library(ggbiplot)
 library(dplyr)
 library(tidyr)
@@ -22,7 +22,6 @@ setwd("/Users/emiliobruna/Dropbox/Alan/Data/Capitulo2")
 NEST.DATA<-read.csv("ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 #make plot locations an ordered factor nest<adjacent<far
 NEST.DATA$location=factor(NEST.DATA$location, levels=c("nest","adjacent", "far"), ordered=TRUE)
-
 
 head(NEST.DATA, 3)
 str(NEST.DATA)
@@ -90,9 +89,10 @@ point.size<-cover*0.1
 g <- ggbiplot(nest.env.pca, obs.scale = 1, var.scale = 1, 
               group = habitat, ellipse = TRUE, 
               circle = TRUE, varname.size=3)+
-  scale_colour_manual(values=c("blue", "red")) +
-  geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
-  #I chose my own colors for the lines
+  scale_colour_manual(values=c("darkred", "darkblue")) +
+#geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
+geom_point(aes(color=habitat, size = point.size)) + scale_size_identity()
+#I chose my own colors for the lines
 g<-g + scale_x_continuous(breaks = seq(-4, 4, 2), limits = c(-5, 4)) # I adjusted X axis so that I could read the larger labels on arrows
 g<-g + scale_y_continuous(breaks = seq(-4, 4, 2), limits = c(-4,4)) # I adjusted Y axis so that I could read the larger labels on arrows
 
@@ -103,7 +103,7 @@ g <- g + theme_classic()+theme(legend.direction = 'horizontal',
                 axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
                 axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
                 legend.title = element_blank(), #remove title of legend
-                legend.text = element_text(color="black", size=16),
+                legend.text = element_text(color="black", size=22, vjust =2),
                 plot.margin =unit(c(1,1,1,1.5), "lines")) +  #plot margin - top, right, bottom, left
                 guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
 
@@ -180,7 +180,7 @@ anova(glm1b,glm4b,test="Chisq")
 AIC(glm1b, glm2b,glm3b,glm4b)
 
 #################
-## PLOTS
+## PLOTS of PCA scores v Canopy COver, etc.
 #################
 
 PCAfigData<-gather(GLM.DATA, "Axis", "PCA.Score", 3:4)
@@ -219,10 +219,6 @@ PCAfig<- PCAfig + theme_classic()+
   guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
 
 PCAfig
-
-
-
-
 
 
 
