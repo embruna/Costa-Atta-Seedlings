@@ -88,7 +88,6 @@ str(VEG_both_summary)
 
 # Hacking my way around to count how many seedlings in each plot
 # CORRECT WAY: 
-
 # A<-na.omit(VEG_both)
 # B<-select(A, nest, location, species)
 # count.df<-A %>%
@@ -103,13 +102,13 @@ str(VEG_both_summary)
 # its associated plot in the long form table.  Yoiu then convert all 1 to 0 -> plots with no plants were counted as a single row
 # with an NA in it.  Ugly, but works
 
+select(VEG_both, nest, location, species, plot.id)
 
-VEG_both_hack<-select(VEG_both, nest, location, species, plot.id)
-count.df<-VEG_both_hack %>%
+count.df<-VEG_both %>%
   group_by(nest, location) %>%
-  summarise(sdlg.no = n())
+  summarise(count = n())
 count.df
-count.df$sdlg.no[count.df$sdlg.no==1]<-0
+count.df$count[count.df$count==1]<-0
 count.df
 
 #too see hpw many species each plot had, first reshape so that the data are in wide fomr
@@ -118,76 +117,57 @@ spp.df.long<-select(VEG_both, nest, location, species, plot.id) #is there a dply
 spp.df.wide<-dcast(spp.df.long, nest+location ~ species)
 spp.df.wide<-spp.df.wide[,c(3:197)]
 spp.df<-rowSums(spp.df.wide != 0)
-#checking to make sure number of rows is the same to cbind
 
 dim(count.df)
 dim(spp.df.wide)
-dim(NEST.DATA_both) 
-#add the column "plot.id" from NEST.DATA_both to create new summary df seedlings.  NB: THERE IS HIGH POTENTIAL FOR FUNCKING THINGS 
-# UP HERE, SO BE CAREFUL
-sdlgs<-cbind(NEST.DATA_both$plot.id, count.df)
-names(sdlgs)[1]<-"plot.id" #rename the column
 
-# THIS CREATES A DATAFRAME YOU CAN BIND TO THE % COVER
-sdlgs<-cbind(sdlgs, spp.df)
-names(sdlgs)[5]<-"spp.no" #rename the column
+sdlgs<-cbind(count.df, spp.df)
 str(sdlgs)
 
-# BIND THEM UP....add % cover!!!
-sdlgs.perc.cover<-select(NEST.DATA_both, plot.id, perc.cover)
-dim(sdlgs.perc.cover) #make sure same size as sdlgs dataframe
-sdlgs<-left_join(sdlgs, sdlgs.perc.cover, by = "plot.id")
-
-#THIS WILL TELL YOU HOW MANY WE HAVE WITH AND WITHOUT % COVER
-# dplyr::count(sdlgs, location) 
-# vs. 
-# dplyr::count(na.omit(sdlgs), location)
-
-# SDLG COUNTS GLMS
-sdlg.glm.data<-na.omit(sdlgs)
-glm.sdlg1 = glm(sdlg.no ~ perc.cover*location+nest ,data=sdlg.glm.data,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
-summary(glm.sdlg1)
-
-glm.sdlg2 = glm(sdlg.no ~ location+nest ,data=sdlg.glm.data,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
-summary(glm.sdlg2)
-
-AIC(glm.sdlg1,glm.sdlg2)
-anova(glm.sdlg1,glm.sdlg2,test="Chisq")
-
-# SPP COUNTS GLMS
-sdlg.glm.data<-na.omit(sdlgs)
-glm.sdlg1 = glm(spp.no ~ perc.cover*location+nest ,data=sdlg.glm.data,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
-summary(glm.sdlg1)
-
-glm.sdlg2 = glm(spp.no ~ location+nest ,data=sdlg.glm.data,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
-summary(glm.sdlg2)
-
-AIC(glm.sdlg1,glm.sdlg2)
-anova(glm.sdlg1,glm.sdlg2,test="Chisq")
-
-###############
-### VISUALIZATIONS
-###############
-plot.sdlg.no<-ggplot(sdlg.glm.data, aes(x = perc.cover, y = sdlg.no, col=location, fill=location)) + 
-  geom_point(shape=16, size = 3) +
-  ylab("no of seedlings") +
-  xlab("canopy cover (%)")+
-  ggtitle("A")+
-  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
-  geom_smooth(method=lm,   # Add linear regression lines
-              se=FALSE) 
-plot.sdlg.no
 
 
-plot.spp.no<-ggplot(sdlg.glm.data, aes(x = perc.cover, y = spp.no, col=location, fill=location)) + 
-  geom_point(shape=16, size = 3) +
-  ylab("no of species") +
-  xlab("canopy cover (%)")+
-  ggtitle("B")+
-  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
-  geom_smooth(method=lm,   # Add linear regression lines
-              se=FALSE) 
-plot.spp.no
+
+
+
+
+
+
+#Number of plants in each plot  group by nest and location of plot and count 
+count.df<-VEG_both_summary %>%
+  group_by(nest, location) %>%
+  summarise(count = n())
+count.df
+
+
+
+
+
+
+
+
+#too see hpw many species each plot had, first reshape so that the data are in wide fomr
+require(reshape2)
+spp.df.lomg<-select(VEG_both_summary, nest, location, species) #is there a dplyr equivalent?????
+spp.df.wide<-dcast(spp.df.lomg, nest+location ~ species)
+spp.df.wide<-spp.df.wide[,c(3:197)]
+spp.df<-rowSums(spp.df.wide != 0)
+
+sdlgs<-cbind(count.df, spp.df)
+str(sdlgs)
+
+
+#add % cover
+sdlgs.perc.cover<-select(NEST.DATA, nest, location, perc.cover)
+str(sdlgs.perc.cover)
+test<-left_join(sdlgs, sdlgs.perc.cover, by = "location")
+
+
+
+
+glm.slg = glm(count ~ location * cover,data=GLM.DATA,family=gaussian) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm4b)
+anova(glm1b,glm4b,test="Chisq")
+
 
 ###############
 ### PAIRED TEST
