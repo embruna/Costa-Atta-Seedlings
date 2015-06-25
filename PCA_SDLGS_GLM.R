@@ -191,11 +191,23 @@ anova(glm.spp1,glm.spp2,glm.spp3,glm.spp4,test="Chisq")
 
 
 
-PCA.SDLGS.FIG<-ggplot(PCA.SDLGS, aes(x = PC1, y = sdlg.no, col=location, fill=location)) + 
+PCA.sdlgs.fig<-ggplot(PCA.SDLGS, aes(x = PC1, y = sdlg.no, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("no of seedlings") +
   xlab("PCA1")+
   ggtitle("A")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
-PCA.SDLGS.FIG
+PCA.sdlgs.fig
+
+
+
+PCA.spp.fig<-ggplot(PCA.SDLGS, aes(x = PC1, y = spp.no, col=location, fill=location)) + 
+  geom_point(shape=16, size = 3) +
+  ylab("no of seedlings") +
+  xlab("PCA1")+
+  ggtitle("A")+
+  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
+PCA.spp.fig
+
