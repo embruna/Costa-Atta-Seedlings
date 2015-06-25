@@ -10,13 +10,14 @@
 # library(RColorBrewer)
 # library(lattice)
 # library(coefplot2) ## for coefplot2
-# library(reshape)
 # library(emdbook)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(grid)
 library(gridExtra)
+library(reshape)
+
 
 #CLear out everything from the environment
 rm(list=ls())
