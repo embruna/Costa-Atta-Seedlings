@@ -84,6 +84,9 @@ summary(nest.env.pca)
 
 habitat<-site.cats$location
 cover<-site.cats$perc.cover
+
+
+
 point.size<-cover*0.1
 g <- ggbiplot(nest.env.pca, obs.scale = 1, var.scale = 1, 
               group = habitat, ellipse = TRUE, 
