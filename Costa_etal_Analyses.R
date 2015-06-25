@@ -16,7 +16,7 @@ library(dplyr)
 library(tidyr)
 library(grid)
 library(gridExtra)
-library(reshape)
+library(reshape2)
 
 
 #CLear out everything from the environment
