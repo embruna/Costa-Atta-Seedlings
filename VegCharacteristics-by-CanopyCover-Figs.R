@@ -23,23 +23,23 @@ NEST.DATA$location=factor(NEST.DATA$location, levels=c("nest","adjacent", "far")
 #Select on Cerrado Denso and Cerrado Ralo
 NEST.DATA.FIG<-filter(NEST.DATA, habitat == "CD" | habitat == "CR")
 #change codes to complete names so figure legends look nicer
-levels(NEST.DATA.FIG$habitat)[levels(NEST.DATA.FIG$habitat)=="CR"]<-"Cerrado Ralo"  
-levels(NEST.DATA.FIG$habitat)[levels(NEST.DATA.FIG$habitat)=="CD"]<-"Cerrado Denso"
-levels(NEST.DATA.FIG$location)[levels(NEST.DATA.FIG$location)=="far"]<-"10m from nest"  
-levels(NEST.DATA.FIG$location)[levels(NEST.DATA.FIG$location)=="nest"]<-"Center of nest"  
-levels(NEST.DATA.FIG$location)[levels(NEST.DATA.FIG$location)=="adjacent"]<-"Adjacent to nest" 
+levels(NEST.DATA.FIG)[levels(NEST.DATA.FIG)=="CR"]<-"Cerrado Ralo"  
+levels(NEST.DATA.FIG)[levels(NEST.DATA.FIG)=="CD"]<-"Cerrado Denso"
+levels(NEST.DATA.FIG)[levels(NEST.DATA.FIG)=="far"]<-"10m from nest"  
+levels(NEST.DATA.FIG)[levels(NEST.DATA.FIG)=="nest"]<-"Center of nest"  
+levels(NEST.DATA.FIG)[levels(NEST.DATA.FIG)=="adjacent"]<-"Adjacent to nest" 
 
-NEST.DATA.FIG<-rename(NEST.DATA.FIG, Grass = grass.bmass)
-NEST.DATA.FIG<-rename(NEST.DATA.FIG, Litter = litter.bmass) 
-NEST.DATA.FIG<-rename(NEST.DATA.FIG, Hardness = soil.pen)
-NEST.DATA.FIG<-rename(NEST.DATA.FIG, Humidity = soil.humid.surface) 
-NEST.DATA.FIG<-rename(NEST.DATA.FIG, Temperature = peak.soil.temp) 
+colnames(NEST.DATA.FIG)[colnames(NEST.DATA.FIG)=="grass.bmass"] <- "Grass"
+colnames(NEST.DATA.FIG)[colnames(NEST.DATA.FIG)=="litter.bmass"] <- "Litter"
+colnames(NEST.DATA.FIG)[colnames(NEST.DATA.FIG)=="soil.pen"] <- "Hardness"
+colnames(NEST.DATA.FIG)[colnames(NEST.DATA.FIG)=="soil.humid.surface"] <- "Humidity"
+colnames(NEST.DATA.FIG)[colnames(NEST.DATA.FIG)=="peak.soil.temp"] <- "Temperature"
+
 ################################################################################################
 ################################################################################################
 ### FACET PLOT: BIOMASS
 ################################################################################################
 ################################################################################################
-
 
 Env1<-select(NEST.DATA.FIG,location, habitat,  perc.cover, Grass, Litter)
 Env1<-gather(Env1, "variable", "value", 4:5)
@@ -55,7 +55,7 @@ EnvFig1<-ggplot(Env1, aes(x=perc.cover, y=value, col=location, fill=location)) +
   xlab("Canopy cover (%)")+
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines, Don't add shaded confidence region
 # +annotation_custom(my_grob_ENV1)
-EnvFig1<-EnvFig1 + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+EnvFig1<-EnvFig1 + scale_colour_manual(values=c("darkred", "black", "darkblue"))  #I chose my own colors for the lines
 EnvFig1<-EnvFig1 + scale_y_continuous(breaks = seq(0, 1500, 250), limits = c(-10, 1500))
 EnvFig1<-EnvFig1 + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
 
@@ -102,7 +102,7 @@ EnvFig2<-ggplot(Env2, aes(x=perc.cover, y=value, col=location, fill=location)) +
   xlab("Canopy cover (%)")+
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines, Don't add shaded confidence region
 # +annotation_custom(my_grob_ENV1)
-EnvFig2<-EnvFig2 + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+EnvFig2<-EnvFig2 + scale_colour_manual(values=c("darkred", "black", "darkblue"))  #I chose my own colors for the lines
 #EnvFig2<-EnvFig2 + scale_y_continuous(breaks = seq(0, 1500, 250), limits = c(-10, 1500))
 EnvFig2<-EnvFig2 + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
 
@@ -143,7 +143,7 @@ EnvFig2
 ##########################
 #####PLOT: LITTER BIOMASS
 ##########################
-litter.fig<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = litter.bmass, col=location, fill=location)) + 
+litter.fig<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = Litter, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("litter biomass (mean g ± SD)") +
   xlab("canopy cover (%)")+
@@ -151,7 +151,7 @@ litter.fig<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = litter.bmass, col=loca
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,   # Add linear regression lines
               se=FALSE)    # Don't add shaded confidence region
-litter.fig<-litter.fig + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+litter.fig<-litter.fig + scale_colour_manual(values=c("darkred", "black", "darkblue"))  #I chose my own colors for the lines
 litter.fig<-litter.fig + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
 litter.fig<-litter.fig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
 litter.fig<- litter.fig + theme_classic()+
@@ -173,7 +173,7 @@ litter.fig
 ##########################
 #####PLOT: GRASS BIOMASS
 ##########################
-grass.fig<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = grass.bmass, col=location, fill=location)) + 
+grass.fig<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = Grass, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("grass biomass (g)") +
   xlab("canopy cover (%)")+
@@ -181,7 +181,7 @@ grass.fig<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = grass.bmass, col=locati
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,   # Add linear regression lines
               se=FALSE)    # Don't add shaded confidence region
-grass.fig<-grass.fig + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+grass.fig<-grass.fig + scale_colour_manual(values=c("darkred", "black", "darkblue"))  #I chose my own colors for the lines
 # grass.fig<-grass.fig + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
 grass.fig<-grass.fig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
 grass.fig<- grass.fig + theme_classic()+
@@ -204,7 +204,7 @@ grass.fig
 ##########################
 #####PLOT: SOIL HARDNESS
 ##########################
-soil.pen<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = soil.pen, col=location, fill=location)) + 
+soil.pen<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = Hardness, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("soil penetration (mm)") +
   xlab("canopy cover (%)")+
@@ -212,7 +212,7 @@ soil.pen<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = soil.pen, col=location, 
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,   # Add linear regression lines
               se=FALSE)    # Don't add shaded confidence region
-soil.pen<-soil.pen + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+soil.pen<-soil.pen + scale_colour_manual(values=c("darkred", "black", "darkblue"))  #I chose my own colors for the lines
 # soil.pen<-soil.pen + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
 soil.pen<-soil.pen + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
 soil.pen<- soil.pen + theme_classic()+
@@ -235,7 +235,7 @@ soil.pen
 ##########################
 #####PLOT: SURFACE SOIL HUMIDITY
 ##########################
-soil.humid<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = soil.humid.surface, col=location, fill=location)) + 
+soil.humid<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = Humidity, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("surface soil humidity (%)") +
   xlab("canopy cover (%)")+
@@ -243,7 +243,7 @@ soil.humid<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = soil.humid.surface, co
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,   # Add linear regression lines
               se=FALSE)    # Don't add shaded confidence region
-soil.humid<-soil.humid + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+soil.humid<-soil.humid + scale_colour_manual(values=c("darkred", "black", "darkblue"))  #I chose my own colors for the lines
 # soil.humid<-soil.humid + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
 soil.humid<-soil.humid + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
 soil.humid<- soil.humid + theme_classic()+
@@ -266,7 +266,7 @@ soil.humid
 ##########################
 #####PLOT: SURFACE TEMP
 ##########################
-peak.soil.temp<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = peak.soil.temp, col=location, fill=location)) + 
+peak.soil.temp<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = Temperature, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("soil temperature (°C))") +
   xlab("canopy cover (%)")+
@@ -274,7 +274,7 @@ peak.soil.temp<-ggplot(NEST.DATA.FIG, aes(x = perc.cover, y = peak.soil.temp, co
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,   # Add linear regression lines
               se=FALSE)    # Don't add shaded confidence region
-peak.soil.temp<-peak.soil.temp + scale_colour_manual(values=c("darkblue", "darkgreen", "black"))  #I chose my own colors for the lines
+peak.soil.temp<-peak.soil.temp + scale_colour_manual(values=c("darkred", "black", "darkblue"))  #I chose my own colors for the lines
 # peak.soil.temp<-peak.soil.temp + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
 peak.soil.temp<-peak.soil.temp + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
 peak.soil.temp<- peak.soil.temp + theme_classic()+
