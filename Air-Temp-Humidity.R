@@ -23,25 +23,32 @@ AIRTEMPHUMID<-read.csv("ActiveNests_TempAirHumid_7.csv", dec=".", header = TRUE,
 # count.ATH<-as.data.frame(table(AIRTEMPHUMID$nest, AIRTEMPHUMID$habitat)) #This is just to see how many nests in each habitat type
 ATH.FIG<-na.omit(AIRTEMPHUMID)  #create a dataframe to make this figure
 
-# #Time needs to be a factor so you can plot it as the x axis
-# ATH.FIG$time<-as.factor(ATH.FIG$time)
+#Time needs to be a factor so you can plot it as the x axis
+ATH.FIG$time<-as.factor(ATH.FIG$time)
 
 #change code to complete names so figure legends look nicer
 levels(ATH.FIG$habitat)[levels(ATH.FIG$habitat)=="CR"]<-"Cerrado Ralo"  
 levels(ATH.FIG$habitat)[levels(ATH.FIG$habitat)=="CD"]<-"Cerrado Denso"  
 levels(ATH.FIG$location)[levels(ATH.FIG$location)=="away"]<-"10m from nest"  
-levels(ATH.FIG$location)[levels(ATH.FIG$location)=="nest"]<-"Center of nest"  
+levels(ATH.FIG$location)[levels(ATH.FIG$location)=="nest"]<-"Center of nest"
+
+
+colnames(ATH.FIG)[colnames(ATH.FIG)=="habitat"] <- "Habitat"
+colnames(ATH.FIG)[colnames(ATH.FIG)=="location"] <- "Location"
+
 
 # Calculate the average of air temp for nests in each habitat in each location at each time point
-ATH.FIG<-ATH.FIG %>% group_by(habitat, location, time) %>% summarise(mean(temp), sd(temp), mean(air.humid), sd(air.humid))
+ATH.FIG1<-ATH.FIG %>% 
+  group_by(Habitat, Location, time) %>% 
+  summarise(mean(temp), sd(temp), mean(air.humid), sd(air.humid))
 ATH.FIG<-as.data.frame(ATH.FIG)
+
+
 #rename the columns
-colnames(ATH.FIG)[4]<-c("Temperature")
-colnames(ATH.FIG)[5]<-c("SD.temperature")
-colnames(ATH.FIG)[6]<-c("Humidity")
-colnames(ATH.FIG)[7]<-c("SD.humidity")
-colnames(ATH.FIG)[1]<-c("Habitat")
-colnames(ATH.FIG)[2]<-c("Location")
+colnames(ATH.FIG)[1]<-c("Temperature")
+colnames(ATH.FIG)[2]<-c("SD.temperature")
+colnames(ATH.FIG)[3]<-c("Humidity")
+colnames(ATH.FIG)[4]<-c("SD.humidity")
 
 
 # Use ggplot to make the figures.  this one is a more basic qplot. The following line greates a line plot of publication 
