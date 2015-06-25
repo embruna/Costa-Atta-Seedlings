@@ -193,21 +193,49 @@ anova(glm.spp1,glm.spp2,glm.spp3,glm.spp4,test="Chisq")
 
 PCA.sdlgs.fig<-ggplot(PCA.SDLGS, aes(x = PC1, y = sdlg.no, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
-  ylab("no of seedlings") +
+  ylab("seedling abundance") +
   xlab("PCA1")+
   ggtitle("A")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
+PCA.sdlgs.fig<-PCA.sdlgs.fig + scale_colour_manual(values=c("darkred", "darkblue"))  #I chose my own colors for the lines
+#plot.sdlg.no<-plot.sdlg.no + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
+PCA.sdlgs.fig<-PCA.sdlgs.fig + scale_x_continuous(breaks = seq(-4, 4, 2), limits = c(-4, 4))
+PCA.sdlgs.fig<- PCA.sdlgs.fig + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 18, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+        #legend.position = 'none',
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        legend.position = c(0.7,0.7),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
 PCA.sdlgs.fig
 
 
 
 PCA.spp.fig<-ggplot(PCA.SDLGS, aes(x = PC1, y = spp.no, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
-  ylab("no of seedlings") +
+  ylab("species richness") +
   xlab("PCA1")+
-  ggtitle("A")+
+  ggtitle("B")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
+PCA.spp.fig<-PCA.spp.fig + scale_colour_manual(values=c("darkred", "darkblue"))  #I chose my own colors for the lines
+#plot.sdlg.no<-plot.sdlg.no + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
+PCA.spp.fig<-PCA.spp.fig + scale_x_continuous(breaks = seq(-4, 4, 2), limits = c(-4, 4))
+PCA.spp.fig<- PCA.spp.fig + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 18, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+        #legend.position = 'none',
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        legend.position = c(0.7,0.7),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
 PCA.spp.fig
 
