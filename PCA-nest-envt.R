@@ -11,7 +11,6 @@ library(tidyr)
 #CLear out everything from the environment
 rm(list=ls())
 
-
 ##################
 #################
 ###DATA ENTRY AND CLEANUP
@@ -141,6 +140,7 @@ anova(glm1,glm2,test="Chisq")
 
 #Add Percent cover as a covariate
 glm3 = glm(PCA1 ~ habitat + cover,data=GLM.DATA,family=gaussian)
+summary(glm3)
 anova(glm2,glm3,test="Chisq")
 # looks like including cover is better than just habitat
 
