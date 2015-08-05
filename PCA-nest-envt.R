@@ -47,8 +47,7 @@ site.cats <- NEST.DATA.PCA[, 1:5]
 env.vars$grass.bmass<-NULL
 env.vars$humid.soil.deep<-NULL
 env.vars$peak.soil.temp<-NULL
-
-
+env.vars$perc.cover<-NULL #PERC COVER IS IN THE PCA!!!! MUST REMOVE IT.
 
 # apply PCA - scale. = TRUE is highly advisable, but default is FALSE. 
 nest.env.pca <- prcomp(env.vars,
@@ -84,7 +83,7 @@ summary(nest.env.pca)
 
 habitat<-site.cats$location
 cover<-site.cats$perc.cover
-
+nest<-site.cats$nest
 
 
 point.size<-cover*0.1
@@ -122,9 +121,9 @@ print(g)
 pca.plot.scores<-(nest.env.pca$x) #this saves the matrix of PCA scores (all axes) for all plots 
 PCA.1<-as.data.frame(pca.plot.scores[,1]) #this saves the 1st column - PCA Axis 1 - as a dataframe
 PCA.2<-pca.plot.scores[,2]#this saves the 2nd column - PCA Axis 2 - as a dataframe
-GLM.DATA<-as.data.frame(cbind(habitat, cover, PCA.1, PCA.2))
-names(GLM.DATA)[3]<-"PCA1" #reaname the column
-names(GLM.DATA)[4]<-"PCA2" #rename the column
+GLM.DATA<-as.data.frame(cbind(nest,habitat, cover, PCA.1, PCA.2))
+names(GLM.DATA)[4]<-"PCA1" #reaname the column
+names(GLM.DATA)[5]<-"PCA2" #rename the column
 
 # Nice overview of GLMs here: http://plantecology.syr.edu/fridley/bio793/glm.html
 
@@ -132,8 +131,16 @@ names(GLM.DATA)[4]<-"PCA2" #rename the column
 ## FOR PCA AXIS 1
 #################
 
+#
+#
+# DOES +nest need to be included, i.e., do you need to treat nest as a block?  
+#
+#
+
+
+
 # GLM to these data with just an intercept (overall mean):
-glm1 = glm(PCA1~1,,family = gaussian, data = GLM.DATA)
+glm1 = glm(PCA1~1+nest,family = gaussian, data = GLM.DATA)
 summary(glm1)
 
 # add a continuous predictor variable, fit the new glm and test it against a model with only an intercept:
@@ -142,7 +149,7 @@ anova(glm1,glm2,test="Chisq")
 #Result: model 2 better fit
 
 #Add Percent cover as a covariate
-glm3 = glm(PCA1 ~ habitat + cover,data=GLM.DATA,family=gaussian)
+glm3 = glm(PCA1 ~ habitat + cover + nest,data=GLM.DATA,family=gaussian)
 summary(glm3)
 anova(glm2,glm3,test="Chisq")
 # looks like including cover is better than just habitat
@@ -153,7 +160,12 @@ summary(glm4)
 anova(glm3,glm4,test="Chisq")
 #Doesn't look like including interaction provides better fit
 
-AIC(glm1, glm2,glm3,glm4)
+glm5 = glm(PCA1 ~ cover ,data=GLM.DATA,family=gaussian)
+anova(glm1,glm5,test="Chisq")
+#Result: model 2 better fit
+
+
+AIC(glm1, glm2,glm3,glm4, glm5)
 
 #################
 ## FOR PCA AXIS 2
@@ -186,7 +198,7 @@ AIC(glm1b, glm2b,glm3b,glm4b)
 ## PLOTS of PCA scores v Canopy COver, etc.
 #################
 
-PCAfigData<-gather(GLM.DATA, "Axis", "PCA.Score", 3:4)
+PCAfigData<-gather(GLM.DATA, "Axis", "PCA.Score", 4:5)
 
 # my_grob_ENV1 = grobTree(textGrob("A", x=0.05,  y=.95, gp=gpar(col="black", fontsize=18, fontface="bold")))
 
@@ -222,6 +234,20 @@ PCAfig<- PCAfig + theme_classic()+
   guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
 
 PCAfig
+
+
+
+arrange(PCAfigData, nest)
+filter(PCAfigData, Axis == "PCA1")
+
+ggplot(data=PCAfigData, aes(x=habitat, y=cover, group=nest)) +
+  geom_line() +
+  geom_point()
+
+
+
+
+
 
 
 
