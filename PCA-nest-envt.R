@@ -11,6 +11,7 @@ library(tidyr)
 #CLear out everything from the environment
 rm(list=ls())
 
+
 ##################
 #################
 ###DATA ENTRY AND CLEANUP
@@ -44,10 +45,14 @@ env.vars <- NEST.DATA.PCA[,5:18]
 site.cats <- NEST.DATA.PCA[, 1:5]
 
 # Exclude the following: grass biomass, canopy.cover, deep soil humidity 
+env.vars$perc.cover<-NULL #PERC COVER IS IN THE PCA!!!! MUST REMOVE IT IF YOU ARE GOING TO USE IN AS A DEP or INDEP VARIABLE
+#Others to consider including or exclusing
+env.vars$peak.soil.temp<-NULL
 env.vars$grass.bmass<-NULL
 env.vars$humid.soil.deep<-NULL
-env.vars$peak.soil.temp<-NULL
-env.vars$perc.cover<-NULL #PERC COVER IS IN THE PCA!!!! MUST REMOVE IT.
+
+
+
 
 # apply PCA - scale. = TRUE is highly advisable, but default is FALSE. 
 nest.env.pca <- prcomp(env.vars,
@@ -248,10 +253,6 @@ filter(PCAfigData, Axis == "PCA1") #select which of the PCA scores you will be m
 ggplot(data=PCAfigData, aes(x=habitat, y=PCA.Score, group=nest)) +
   geom_line() +
   geom_point()
-
-
-
-
 
 
 
