@@ -235,12 +235,17 @@ PCAfig<- PCAfig + theme_classic()+
 
 PCAfig
 
+# 
+# PAIRED LINES so you ccan compare cover or PCA scores for each nest
 
 
-arrange(PCAfigData, nest)
-filter(PCAfigData, Axis == "PCA1")
+arrange(PCAfigData, nest) #sort them by nest so that ggplot can make the plot correctly
+filter(PCAfigData, Axis == "PCA1") #select which of the PCA scores you will be mapping, if any
 
-ggplot(data=PCAfigData, aes(x=habitat, y=cover, group=nest)) +
+# y=PCA.Score
+# y=cover
+
+ggplot(data=PCAfigData, aes(x=habitat, y=PCA.Score, group=nest)) +
   geom_line() +
   geom_point()
 
