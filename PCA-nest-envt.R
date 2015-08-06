@@ -47,7 +47,7 @@ site.cats <- NEST.DATA.PCA[, 1:5]
 
 # ARE THERE ANY ENV VARIABLE YOU WANT TO EXCLUDE? If so toggle off
 
-env.vars$perc.cover<-NULL #PERC COVER IS IN THE PCA!!!! MUST REMOVE IT IF YOU ARE GOING TO USE IN AS A DEP or INDEP VARIABLE
+#env.vars$perc.cover<-NULL #PERC COVER IS IN THE PCA!!!! MUST REMOVE IT IF YOU ARE GOING TO USE IN AS A DEP or INDEP VARIABLE
 #Others to consider including or exclusing
 #  env.vars$peak.soil.temp<-NULL
 #  env.vars$grass.bmass<-NULL
