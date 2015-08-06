@@ -44,11 +44,13 @@ NEST.DATA.PCA<-na.omit(NEST.DATA.PCA)
 env.vars <- NEST.DATA.PCA[,5:18]
 site.cats <- NEST.DATA.PCA[, 1:5]
 
-# Exclude the following: grass biomass, canopy.cover, deep soil humidity 
+
+# ARE THERE ANY ENV VARIABLE YOU WANT TO EXCLUDE? If so toggle off
+
 env.vars$perc.cover<-NULL #PERC COVER IS IN THE PCA!!!! MUST REMOVE IT IF YOU ARE GOING TO USE IN AS A DEP or INDEP VARIABLE
 #Others to consider including or exclusing
-env.vars$peak.soil.temp<-NULL
-env.vars$grass.bmass<-NULL
+#  env.vars$peak.soil.temp<-NULL
+#  env.vars$grass.bmass<-NULL
 env.vars$humid.soil.deep<-NULL
 
 
@@ -116,6 +118,12 @@ g <- g + theme_classic()+theme(legend.direction = 'horizontal',
 print(g)
 
 
+
+
+
+
+
+
 #########################################
 ## ANALYSES BASED ON PCA
 #########################################
@@ -132,73 +140,130 @@ names(GLM.DATA)[5]<-"PCA2" #rename the column
 
 # Nice overview of GLMs here: http://plantecology.syr.edu/fridley/bio793/glm.html
 
-#################
-## FOR PCA AXIS 1
-#################
 
-#
-#
-# DOES +nest need to be included, i.e., do you need to treat nest as a block?  
-#
-#
-
-
-
-# GLM to these data with just an intercept (overall mean):
-glm1 = glm(PCA1~1+nest,family = gaussian, data = GLM.DATA)
-summary(glm1)
-
+# #################
+# ## FOR PCA AXIS 1: effects of nest, location on envtl conditions
+# #################
 # add a continuous predictor variable, fit the new glm and test it against a model with only an intercept:
-glm2 = glm(PCA1 ~ habitat ,data=GLM.DATA,family=gaussian)
-anova(glm1,glm2,test="Chisq")
+glmA = glm(PCA1 ~ nest, data=GLM.DATA,family=gaussian)
+summary(glmA)
+
+glmB = glm(PCA1 ~ habitat, data=GLM.DATA,family=gaussian)
+summary(glmB)
+
+anova(glmA,glmB,test="Chisq")
+#Result: model 2 not a significantly better fit
+
+glmC = glm(PCA1 ~ habitat+nest, data=GLM.DATA,family=gaussian)
+summary(glmC)
+anova(glmA,glmC,test="Chisq")
+#Result: model 3 IS a significantly better fit than just 1
+
+AIC(glmA,glmB,glmC)
 #Result: model 2 better fit
-
-#Add Percent cover as a covariate
-glm3 = glm(PCA1 ~ habitat + cover + nest,data=GLM.DATA,family=gaussian)
-summary(glm3)
-anova(glm2,glm3,test="Chisq")
-# looks like including cover is better than just habitat
-
-# Is there an interaction?
-glm4 = glm(PCA1 ~ habitat * cover,data=GLM.DATA,family=gaussian) #Recall * is syntax syntax shortcue of both main effects + interaction
-summary(glm4)
-anova(glm3,glm4,test="Chisq")
-#Doesn't look like including interaction provides better fit
-
-glm5 = glm(PCA1 ~ cover ,data=GLM.DATA,family=gaussian)
-anova(glm1,glm5,test="Chisq")
-#Result: model 2 better fit
+# 
 
 
-AIC(glm1, glm2,glm3,glm4, glm5)
-
-#################
-## FOR PCA AXIS 2
-#################
-
-# GLM to these data with just an intercept (overall mean):
-glm1b = glm(PCA2~1,,family = gaussian, data = GLM.DATA)
-summary(glm1b)
-
+# #################
+# ## FOR PCA AXIS 2: effects of nest, location on envtl conditions
+# #################
 # add a continuous predictor variable, fit the new glm and test it against a model with only an intercept:
-glm2b = glm(PCA2 ~ habitat ,data=GLM.DATA,family=gaussian)
-anova(glm1b,glm2b,test="Chisq")
-#Result: Nope
+glmA = glm(PCA2 ~ nest, data=GLM.DATA,family=gaussian)
+summary(glmA)
 
-#Add Percent cover as a covariate
-glm3b = glm(PCA2 ~ habitat + cover,data=GLM.DATA,family=gaussian)
-summary(glm3b)
-anova(glm1b,glm2b,test="Chisq")
-# nope - not better than just intercept
+glmB = glm(PCA2 ~ habitat, data=GLM.DATA,family=gaussian)
+summary(glmB)
 
-# Is there an interaction?
-glm4b = glm(PCA2 ~ habitat * cover,data=GLM.DATA,family=gaussian) #Recall * is syntax syntax shortcue of both main effects + interaction
-summary(glm4b)
-anova(glm1b,glm4b,test="Chisq")
-#Doesn't look 
+anova(glmA,glmB,test="Chisq")
+#Result: model 2 not a significantly better fit
 
-AIC(glm1b, glm2b,glm3b,glm4b)
+glmC = glm(PCA2 ~ habitat+nest, data=GLM.DATA,family=gaussian)
+summary(glmC)
+anova(glmA,glmC,test="Chisq")
+#Result: model 3 IS a significantly better fit than just 1
 
+AIC(glmA,glmB,glmC)
+#Result: model 2 better fit
+# 
+# 
+# #################
+# ## FOR PCA AXIS 1
+# #################
+# 
+# #
+# #
+# # DOES +nest need to be included, i.e., do you need to treat nest as a block?  
+# #
+# #
+# 
+# 
+# # GLM to these data with just an intercept (overall mean):
+# glm1 = glm(PCA1~1,family = gaussian, data = GLM.DATA)
+# summary(glm1)
+# 
+# # add a continuous predictor variable, fit the new glm and test it against a model with only an intercept:
+# glm2 = glm(PCA1 ~ habitat +nest, data=GLM.DATA,family=gaussian)
+# anova(glm1,glm2,test="Chisq")
+# #Result: model 2 better fit
+# 
+# #Add Percent cover as a covariate
+# glm3 = glm(PCA1 ~ habitat + cover + nest,data=GLM.DATA,family=gaussian)
+# summary(glm3)
+# anova(glm2,glm3,test="Chisq")
+# # looks like including cover is better than just habitat
+# 
+# # Is there an interaction?
+# glm4 = glm(PCA1 ~ habitat * cover +nest,data=GLM.DATA,family=gaussian) #Recall * is syntax syntax shortcue of both main effects + interaction
+# summary(glm4)
+# anova(glm3,glm4,test="Chisq")
+# #Doesn't look like including interaction provides better fit
+# 
+# glm5 = glm(PCA1 ~ cover +nest,data=GLM.DATA,family=gaussian)
+# anova(glm1,glm5,test="Chisq")
+# #Result: model 2 better fit
+# 
+# glm6 = glm(PCA1~nest,family = gaussian, data = GLM.DATA)
+# summary(glm6)
+# 
+# 
+# AIC(glm1, glm2,glm3,glm4, glm5, glm6)
+# 
+# #################
+# ## FOR PCA AXIS 2
+# #################
+# 
+# 
+# # GLM to these data with just an intercept (overall mean):
+# glm2.1 = glm(PCA2~1,family = gaussian, data = GLM.DATA)
+# summary(glm2.1)
+# 
+# # add a continuous predictor variable, fit the new glm and test it against a model with only an intercept:
+# glm2.2 = glm(PCA2 ~ habitat +nest, data=GLM.DATA,family=gaussian)
+# anova(glm2.1,glm2.2,test="Chisq")
+# #Result: model 2 better fit
+# 
+# #Add Percent cover as a covariate
+# glm2.3 = glm(PCA2 ~ habitat + cover + nest,data=GLM.DATA,family=gaussian)
+# summary(glm2.3)
+# anova(glm2.2,glm2.3,test="Chisq")
+# # looks like including cover is better than just habitat
+# 
+# # Is there an interaction?
+# glm2.4 = glm(PCA2 ~ habitat * cover +nest,data=GLM.DATA,family=gaussian) #Recall * is syntax syntax shortcue of both main effects + interaction
+# summary(glm2.4)
+# anova(glm2.3,glm2.4,test="Chisq")
+# #Doesn't look like including interaction provides better fit
+# 
+# glm2.5 = glm(PCA2 ~ cover +nest,data=GLM.DATA,family=gaussian)
+# anova(glm2.1,glm2.5,test="Chisq")
+# #Result: model 2 better fit
+# 
+# glm2.6 = glm(PCA2~nest,family = gaussian, data = GLM.DATA)
+# summary(glm2.6)
+# 
+# 
+# AIC(glm2.1, glm2.2,glm2.3,glm2.4, glm2.5, glm2.6)
+# 
 #################
 ## PLOTS of PCA scores v Canopy COver, etc.
 #################
