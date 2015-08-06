@@ -36,9 +36,9 @@ NEST.DATA.PCA<-na.omit(NEST.DATA.PCA)
 env.vars <- NEST.DATA.PCA[,5:18]
 site.cats <- NEST.DATA.PCA[, 1:5]
 # Exclude the following: grass biomass, canopy.cover, deep soil humidity 
-env.vars$grass.bmass<-NULL
+#env.vars$grass.bmass<-NULL
 env.vars$humid.soil.deep<-NULL
-env.vars$peak.soil.temp<-NULL
+#env.vars$peak.soil.temp<-NULL
 # apply PCA - scale. = TRUE is highly advisable, but default is FALSE. 
 nest.env.pca <- prcomp(env.vars,
                        center = TRUE,
@@ -150,37 +150,70 @@ PCA.SDLGS<-cbind(PCA.SDLGS,PCA.scores)
 
 
 
+
 #GLMS
+glm.sdlg0 = glm(sdlg.no ~ PC1 ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm.sdlg0)
+
+
 glm.sdlg1 = glm(sdlg.no ~ nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
 summary(glm.sdlg1)
 
-glm.sdlg2 = glm(sdlg.no ~ PC1+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+glm.sdlg2 = glm(sdlg.no ~ location ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
 summary(glm.sdlg2)
 
-glm.sdlg3 = glm(sdlg.no ~ perc.cover+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+glm.sdlg3 = glm(sdlg.no ~ PC1+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
 summary(glm.sdlg3)
 
-glm.sdlg4 = glm(sdlg.no ~ PC1*perc.cover+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+glm.sdlg4 = glm(sdlg.no ~ PC1+location ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
 summary(glm.sdlg4)
 
-AIC(glm.sdlg1,glm.sdlg2,glm.sdlg3,glm.sdlg4)
-anova(glm.sdlg1,glm.sdlg2,glm.sdlg3,glm.sdlg4,test="Chisq")
+glm.sdlg4.5 = glm(sdlg.no ~ nest+location ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm.sdlg4.5)
+
+glm.sdlg5 = glm(sdlg.no ~ PC1+location+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm.sdlg5)
+
+
+# glm.sdlg3 = glm(sdlg.no ~ perc.cover+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+# summary(glm.sdlg3)
+
+# glm.sdlg4 = glm(sdlg.no ~ PC1*perc.cover+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+# summary(glm.sdlg4)
+
+AIC(glm.sdlg0,glm.sdlg1,glm.sdlg2,glm.sdlg3,glm.sdlg4,glm.sdlg4.5,glm.sdlg5)
+anova(glm.sdlg0,glm.sdlg1,glm.sdlg2,glm.sdlg3,glm.sdlg4,glm.sdlg4.5,glm.sdlg5,test="Chisq")
 
 # SPP COUNTS GLMS
-glm.spp1 = glm(spp.no ~ nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
-summary(glm.spp1 )
 
-glm.spp2  = glm(spp.no ~ PC1+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+#GLMS
+
+glm.spp0 = glm(spp.no ~ PC1 ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm.spp0)
+
+glm.spp1 = glm(spp.no ~ nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm.spp1)
+
+glm.spp2 = glm(spp.no ~ location ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
 summary(glm.spp2)
 
-glm.spp3  = glm(spp.no ~ perc.cover+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+glm.spp3 = glm(spp.no ~ PC1+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
 summary(glm.spp3)
 
-glm.spp4  = glm(spp.no ~ PC1*perc.cover+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+glm.spp4 = glm(spp.no ~ PC1+location ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
 summary(glm.spp4)
 
-AIC(glm.spp1,glm.spp2,glm.spp3,glm.spp4)
-anova(glm.spp1,glm.spp2,glm.spp3,glm.spp4,test="Chisq")
+glm.spp4.5 = glm(spp.no ~ nest+location ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm.spp4.5)
+
+glm.spp5 = glm(spp.no ~ PC1+location+nest ,data=PCA.SDLGS,family=poisson) #Recall * is syntax syntax shortcue of both main effects + interaction
+summary(glm.spp5)
+
+
+
+
+AIC(glm.spp0,glm.spp1,glm.spp2,glm.spp3,glm.spp4,glm.spp4.5,glm.spp5)
+anova(glm.spp0, glm.spp1,glm.spp2,glm.spp3,glm.spp4,glm.spp4.5,glm.spp5,test="Chisq")
 
 
 
