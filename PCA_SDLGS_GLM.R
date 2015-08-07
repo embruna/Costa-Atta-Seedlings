@@ -184,6 +184,11 @@ summary(glm.sdlg5)
 AIC(glm.sdlg0,glm.sdlg1,glm.sdlg2,glm.sdlg3,glm.sdlg4,glm.sdlg4.5,glm.sdlg5)
 anova(glm.sdlg0,glm.sdlg1,glm.sdlg2,glm.sdlg3,glm.sdlg4,glm.sdlg4.5,glm.sdlg5,test="Chisq")
 
+#ANOva of best fit model (not correct but useful at this stage)
+# bestfit_sdlgno =aov(spp.no ~ nest+location ,data=PCA.SDLGS) #Recall * is syntax syntax shortcue of both main effects + interaction
+# summary(bestfit_sdlgno)
+
+
 # SPP COUNTS GLMS
 
 #GLMS
@@ -215,6 +220,9 @@ summary(glm.spp5)
 AIC(glm.spp0,glm.spp1,glm.spp2,glm.spp3,glm.spp4,glm.spp4.5,glm.spp5)
 anova(glm.spp0, glm.spp1,glm.spp2,glm.spp3,glm.spp4,glm.spp4.5,glm.spp5,test="Chisq")
 
+# #ANOva of best fit model (not correct but useful at this stage)
+# bestfit_sppno =aov(spp.no ~ location ,data=PCA.SDLGS) #Recall * is syntax syntax shortcue of both main effects + interaction
+# # summary(bestfit_sppno)
 
 
 
