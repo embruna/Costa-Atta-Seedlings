@@ -159,6 +159,10 @@ summary(glmC)
 anova(glmA,glmC,test="Chisq")
 #Result: model 3 IS a significantly better fit than just 1
 
+#Anova of best fit model, not sure if this is the right thing to show in paper
+# aov_best1 = aov(PCA1 ~ habitat+nest, data=GLM.DATA)
+# summary(aov_best1)
+
 AIC(glmA,glmB,glmC)
 #Result: model 2 better fit
 # 
@@ -168,23 +172,27 @@ AIC(glmA,glmB,glmC)
 # ## FOR PCA AXIS 2: effects of nest, location on envtl conditions
 # #################
 # add a continuous predictor variable, fit the new glm and test it against a model with only an intercept:
-glmA = glm(PCA2 ~ nest, data=GLM.DATA,family=gaussian)
-summary(glmA)
+glmD = glm(PCA2 ~ nest, data=GLM.DATA,family=gaussian)
+summary(glmD)
 
-glmB = glm(PCA2 ~ habitat, data=GLM.DATA,family=gaussian)
-summary(glmB)
+glmE = glm(PCA2 ~ habitat, data=GLM.DATA,family=gaussian)
+summary(glmE)
 
-anova(glmA,glmB,test="Chisq")
+anova(glmD,glmE,test="Chisq")
 #Result: model 2 not a significantly better fit
 
-glmC = glm(PCA2 ~ habitat+nest, data=GLM.DATA,family=gaussian)
-summary(glmC)
-anova(glmA,glmC,test="Chisq")
+glmF = glm(PCA2 ~ habitat+nest, data=GLM.DATA,family=gaussian)
+summary(glmF)
+anova(glmD,glmF,test="Chisq")
 #Result: model 3 IS a significantly better fit than just 1
 
-AIC(glmA,glmB,glmC)
+AIC(glmD,glmE,glmF)
 #Result: model 2 better fit
 # 
+#Anova of best fit model, not sure if this is the right thing to show in paper
+# aov_best2 = aov(PCA2 ~ habitat+nest, data=GLM.DATA)
+# summary(aov_best2)
+
 # 
 # #################
 # ## FOR PCA AXIS 1
