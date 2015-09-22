@@ -5,7 +5,7 @@ library(tidyr)
 #CLear out everything from the environment
 rm(list=ls())
 
-setwd("/Users/emiliobruna/Dropbox/Alan/Data/Capitulo2")
+setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Data/Capitulo2")
 
 NEST.DATA<-read.csv("ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 #SElect data for each histogram
@@ -76,16 +76,44 @@ perc.cover.loc
 
 HIST.DATA<-na.omit(HIST.DATA)
 
-# Main effect of Cover with nest as Block
-glm.cover1<-glm((perc.cover/100)~location+nest, HIST.DATA,family=binomial)
+HIST.DATA$prop.cover<-(HIST.DATA$perc.cover/100)+0.01
 
+# use bionomial or quasibinomial?
+# http://stats.stackexchange.com/questions/134783/glm-for-proportional-data-and-underdispersion
+
+# Just intercept
+glm.cover0<-glm(prop.cover~1, HIST.DATA,family=binomial)  
+summary(glm.cover0)
+
+# Main effect of location
+glm.cover1<-glm(prop.cover~location, HIST.DATA,family=binomial)  
 summary(glm.cover1)
 
 # Just the Nest Effect
-glm.cover2<-glm((perc.cover/100)~nest, HIST.DATA,family=binomial)
+glm.cover2<-glm(prop.cover~nest, HIST.DATA,family=binomial)
 summary(glm.cover2)                    
 
-AIC(glm.cover1, glm.cover2)
+# Just the habitat Effect
+# glm.cover3<-glm(prop.cover~habitat, HIST.DATA,family=binomial)
+# summary(glm.cover3)        
+
+
+# effect of location and nest
+glm.cover4<-glm(prop.cover~location+nest, HIST.DATA,family=binomial)
+summary(glm.cover4)
+# 
+
+# effect of location, habitat, their interaction, and nest [block]
+# glm.cover5<-glm(prop.cover~location*habitat+nest, HIST.DATA,family=binomial)
+# summary(glm.cover5)
+
+AIC(glm.cover0,glm.cover1, glm.cover2, glm.cover4)
+
+anova(glm.cover4,glm.cover5,test="Chisq")
+
+
+aov1<-aov(log(prop.cover/(1-prop.cover))~location*habitat+nest, HIST.DATA)
+summary(aov1)
 
 perc.cover.loc
 
