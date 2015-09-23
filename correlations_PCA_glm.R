@@ -433,16 +433,342 @@ str(GLM.DATA.nosoil)
 
 # WILL USE THE FOLLOWING TO DO GLMS W/ NO SOILS IN PCA (i.e., larger sample size)
 sdlgs.nosoil<-cbind(sdlgs, GLM.DATA.nosoil)
+sdlgs.nosoil$nest.nosoil<-NULL
+sdlgs.nosoil$cover.nosoil<-NULL
+sdlgs.nosoil$location.nosoil<-NULL
+
 str(sdlgs.nosoil)
 
 # WILL USE THE FOLLOWING TO DO GLMS ***WITH*** SOILS IN PCA (i.e., larger sample size)
 sdlgs.all<-filter(sdlgs, location =="far" | location == "nest")
-sdlgs.all<-cbind(sdlgs.all, GLM.DATA.all)
+# clean up column names and sort to do join of two dataframes of different sizes
+sdlgs.all$plot.id<-NULL
+sdlgs.all<-left_join(sdlgs.all,GLM.DATA.all, by = c("nest" = "nest.all","location" = "location.all"))
+#NOW CHABGE NAMES BACK TO SIMPOLIFY THE ANALYSES BELOW
+sdlgs.all$cover.all<-NULL
+names(sdlgs.all)[5]<-"cover"
 
-***NEED TO JOIN THEM UP BY THE NESTS
-str(sdlgs.all)
-str(GLM.DATA.all)
-***Then will be ready to do GLMS
+####################################################################
+################# WHAT FACTORS INFLUENCE SEEDLING COUNT?  
+####################################################################
+# Nice overview of GLMs here: http://plantecology.syr.edu/fridley/bio793/glm.html
+
+
+##################
+### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 1
+##################
+
+
+glm1A = glm(sdlg.no ~ nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm1A)
+
+glm1B = glm(sdlg.no ~ location, data=sdlgs.nosoil,family=gaussian)
+summary(glm1B)
+
+glm1C = glm(sdlg.no ~ PCA1.nosoil, data=sdlgs.nosoil,family=gaussian)
+summary(glm1C)
+
+glm1D = glm(sdlg.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm1D)
+
+glm1E = glm(sdlg.no ~ PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm1E)
+
+glm1F = glm(sdlg.no ~ PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm1F)
+
+glm1G = glm(sdlg.no ~ location+PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm1G)
+
+AIC.NoSoils.PCA1.Sdlg<-AIC(glm1A,glm1B,glm1C, glm1D, glm1E, glm1F, glm1G)
+AIC.NoSoils.PCA1.Sdlg
+#LOWEST AIC - EFFECT OF LOCATION IS ALL YOU NEED TO FIT DATA FOR ABUNDNACE 
+
+
+##################
+### WITH SOILS DATA, IE, FEWER PLOTS - PCA AXIS 1
+##################
+
+glm2A = glm(sdlg.no ~ nest, data=sdlgs.all,family=gaussian)
+summary(glm2A)
+
+glm2B = glm(sdlg.no ~ location, data=sdlgs.all,family=gaussian)
+summary(glm2B)
+
+glm2C = glm(sdlg.no ~ PCA1.all, data=sdlgs.all,family=gaussian)
+summary(glm2C)
+
+glm2D = glm(sdlg.no ~ location+nest, data=sdlgs.all,family=gaussian)
+summary(glm2D)
+
+glm2E = glm(sdlg.no ~ PCA1.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm2E)
+
+glm2F = glm(sdlg.no ~ PCA1.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm2F)
+
+glm2G = glm(sdlg.no ~ location+PCA1.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm2G)
+
+AIC.Soils.PCA1.Sdlg<-AIC(glm2A,glm2B,glm2C, glm2D, glm2E, glm2F, glm2G)
+AIC.Soils.PCA1.Sdlg
+#LOWEST AIC - EFFECT OF LOCATION and NEST, but still no PCA (GRADIENT) EFFECT!!!
+
+
+
+##################
+### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 2
+##################
+
+
+glm3A = glm(sdlg.no ~ nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm3A)
+
+glm3B = glm(sdlg.no ~ location, data=sdlgs.nosoil,family=gaussian)
+summary(glm3B)
+
+glm3C = glm(sdlg.no ~ PCA2.nosoil, data=sdlgs.nosoil,family=gaussian)
+summary(glm3C)
+
+glm3D = glm(sdlg.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm3D)
+
+glm3E = glm(sdlg.no ~ PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm3E)
+
+glm3F = glm(sdlg.no ~ PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm3F)
+
+glm3G = glm(sdlg.no ~ location+PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm3G)
+
+AIC.NoSoils.PCA2.Sdlg<-AIC(glm3A,glm3B,glm3C, glm3D, glm3E, glm3F, glm3G)
+AIC.NoSoils.PCA2.Sdlg
+#LOWEST AIC - EFFECT OF LOCATION IS ALL YOU NEED TO FIT DATA FOR ABUNDNACE WITH PCA 2
+
+
+
+##################
+### WITH SOILS DATA, IE, FEWER PLOTS - PCA AXIS 2
+##################
+
+glm4A = glm(sdlg.no ~ nest, data=sdlgs.all,family=gaussian)
+summary(glm4A)
+
+glm4B = glm(sdlg.no ~ location, data=sdlgs.all,family=gaussian)
+summary(glm4B)
+
+glm4C = glm(sdlg.no ~ PCA2.all, data=sdlgs.all,family=gaussian)
+summary(glm4C)
+
+glm4D = glm(sdlg.no ~ location+nest, data=sdlgs.all,family=gaussian)
+summary(glm4D)
+
+glm4E = glm(sdlg.no ~ PCA2.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm4E)
+
+glm4F = glm(sdlg.no ~ PCA2.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm4F)
+
+glm4G = glm(sdlg.no ~ location+PCA2.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm4G)
+
+AIC.Soils.PCA2.Sdlg<-AIC(glm4A,glm4B,glm4C, glm4D, glm4E, glm4F, glm4G)
+AIC.Soils.PCA2.Sdlg
+#LOWEST AIC - EFFECT OF OCAm ALONE AND IN COMBINATION WITH LOCATION. GRADIENT 
+
+
+
+####################################################################
+################# WHAT FACTORS INFLUENCE SEEDLING SPP RICHNESS?  
+####################################################################
+
+
+##################
+### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 1
+##################
+
+
+glm5A = glm(spp.no ~ nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm5A)
+
+glm5B = glm(spp.no ~ location, data=sdlgs.nosoil,family=gaussian)
+summary(glm5B)
+
+glm5C = glm(spp.no ~ PCA1.nosoil, data=sdlgs.nosoil,family=gaussian)
+summary(glm5C)
+
+glm5D = glm(spp.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm5D)
+
+glm5E = glm(spp.no ~ PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm5E)
+
+glm5F = glm(spp.no ~ PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm5F)
+
+glm5G = glm(spp.no ~ location+PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm5G)
+
+AIC.NoSoils.PCA1.Spp<-AIC(glm5A,glm5B,glm5C, glm5D, glm5E, glm5F, glm5G)
+AIC.NoSoils.PCA1.Spp
+#LOWEST AIC - EFFECTS OF LOCATION< NEST, AND COMBO OF NEST, GRADIENT, AND LOCATION. In other words, gradient effects diversity, but not abudnance
+#this makes sense - species have niche requirements that will vary (hoffmann)
+
+
+##################
+### WITH SOILS DATA, IE, FEWER PLOTS - PCA AXIS 1
+##################
+
+glm6A = glm(spp.no ~ nest, data=sdlgs.all,family=gaussian)
+summary(glm6A)
+
+glm6B = glm(spp.no ~ location, data=sdlgs.all,family=gaussian)
+summary(glm6B)
+
+glm6C = glm(spp.no ~ PCA1.all, data=sdlgs.all,family=gaussian)
+summary(glm6C)
+
+glm6D = glm(spp.no ~ location+nest, data=sdlgs.all,family=gaussian)
+summary(glm6D)
+
+glm6E = glm(spp.no ~ PCA1.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm6E)
+
+glm6F = glm(spp.no ~ PCA1.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm6F)
+
+glm6G = glm(spp.no ~ location+PCA1.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm6G)
+
+AIC.Soils.PCA1.Spp<-AIC(glm6A,glm6B,glm6C, glm6D, glm6E, glm6F, glm6G)
+AIC.Soils.PCA1.Spp
+#LOWEST AIC - E...BUT DON't OVER INTERPET ABOVE. ITS REALLY SOILS THAT DRIVE DIVERSITY - you see that when you include the soils data in the PCA - and THIS IS INFLUENCED BY ANTS
+
+
+
+##################
+### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 2
+##################
+
+
+glm7A = glm(spp.no ~ nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm7A)
+
+glm7B = glm(spp.no ~ location, data=sdlgs.nosoil,family=gaussian)
+summary(glm7B)
+
+glm7C = glm(spp.no ~ PCA2.nosoil, data=sdlgs.nosoil,family=gaussian)
+summary(glm7C)
+
+glm7D = glm(spp.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm7D)
+
+glm7E = glm(spp.no ~ PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm7E)
+
+glm7F = glm(spp.no ~ PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm7F)
+
+glm7G = glm(spp.no ~ location+PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm7G)
+
+AIC.NoSoils.PCA2.Spp<-AIC(glm7A,glm7B,glm7C, glm7D, glm7E, glm7F, glm7G)
+AIC.NoSoils.PCA2.Spp
+#LOWEST AIC - LOCATION AND NEST AGAIN COME OUR IMPORTANT WHEN YOU DONT INCLUDE SOILS....
+
+
+
+##################
+### WITH SOILS DATA, IE, FEWER PLOTS - PCA AXIS 2
+##################
+
+glm8A = glm(spp.no ~ nest, data=sdlgs.all,family=gaussian)
+summary(glm8A)
+
+glm8B = glm(spp.no ~ location, data=sdlgs.all,family=gaussian)
+summary(glm8B)
+
+glm8C = glm(spp.no ~ PCA2.all, data=sdlgs.all,family=gaussian)
+summary(glm8C)
+
+glm8D = glm(spp.no ~ location+nest, data=sdlgs.all,family=gaussian)
+summary(glm8D)
+
+glm8E = glm(spp.no ~ PCA2.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm8E)
+
+glm8F = glm(spp.no ~ PCA2.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm8F)
+
+glm8G = glm(spp.no ~ location+PCA2.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm8G)
+
+AIC.Soils.PCA2.Spp<-AIC(glm8A,glm8B,glm8C, glm8D, glm8E, glm8F, glm8G)
+AIC.Soils.PCA2.Spp
+#LOWEST AIC - ...BUT AXIS TWO AGAIN IMPORTATN WHEN YOU SOILS AGAIN PLAY A ROLE (THOUGH LESS FOR AXIS 1 than AXIS 2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -470,51 +796,6 @@ PC1vCover
 
 
 
-
-# Nice overview of GLMs here: http://plantecology.syr.edu/fridley/bio793/glm.html
-# #################
-# ## FOR PCA AXIS 1: effects of nest, location on envtl conditions
-# #################
-# add a continuous predictor variable, fit the new glm and test it against a model with only an intercept:
-
-
-glmB = glm(PCA1 ~ cover, data=GLM.DATA,family=gaussian)
-summary(glmB)
-
-# glmC = glm(PCA1 ~ location, data=GLM.DATA,family=gaussian)
-# summary(glmC)
-
-glmA = glm(PCA1 ~ nest, data=GLM.DATA,family=gaussian)
-summary(glmA)
-
-# glmD = glm(PCA1 ~ cover+location, data=GLM.DATA,family=gaussian)
-# summary(glmD)
-
-glmE = glm(PCA1 ~ cover+nest, data=GLM.DATA,family=gaussian)
-summary(glmE)
-
-# glmF = glm(PCA1 ~ location+nest, data=GLM.DATA,family=gaussian)
-# summary(glmF)
-
-# glmG = glm(PCA1 ~ cover+location+nest, data=GLM.DATA,family=gaussian)
-# summary(glmG)
-
-AIC(glmA,glmB,glmC, glmD, glmE, glmF, glmG)
-AIC(glmA, glmE)
-
-anova(glmA,glmE,test="Chisq")
-
-anova(glmA,glmC,test="Chisq")
-#Result: model 3 IS a significantly better fit than just 1
-
-#Anova of best fit model, not sure if this is the right thing to show in paper
-# aov_best1 = aov(PCA1 ~ location+nest, data=GLM.DATA)
-# summary(aov_best1)
-
-
-
-#Result: model 2 better fit
-# 
 
 
 # #################
