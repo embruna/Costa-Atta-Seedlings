@@ -94,7 +94,7 @@ Env2<-gather(Env2, "variable", "value", 4:6)
 # my_grob_ENV1 = grobTree(textGrob("A", x=0.05,  y=.95, gp=gpar(col="black", fontsize=18, fontface="bold")))
 
 
-EnvFig2<-ggplot(Env2, aes(x=perc.cover, y=value, col=location, fill=location)) + 
+EnvFig2<-ggplot(Env2, aes(x=perc.cover, y=value, col=location, fill=location))
   geom_point(shape=16, size=3)+
   #   facet_grid(variable ~ .)+
   facet_wrap(~variable,nrow = 3,scales = "free")+
