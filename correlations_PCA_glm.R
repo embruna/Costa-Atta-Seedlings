@@ -102,7 +102,7 @@ cor.test(ph,OM)
 cor.test(ph,P)
 
 cor.test(P,K)
-cor.test(K,Ca)
+cor.test(P,Ca)
 cor.test(P,Mg)
 cor.test(P,Al)
 cor.test(P,OM)
@@ -131,6 +131,42 @@ cor.test(pc,Al)
 cor.test(pc,OM)
 cor.test(pc,P)
 # Not infdividually
+
+
+cor.test(lb,ph)
+cor.test(lb,P)
+cor.test(lb,K)
+cor.test(lb,Ca)
+cor.test(lb,Mg)
+cor.test(lb,Al)
+cor.test(lb,OM)
+
+cor.test(sp,ph)
+cor.test(sp,P)
+cor.test(sp,K)
+cor.test(sp,Ca)
+cor.test(sp,Mg)
+cor.test(sp,Al)
+cor.test(sp,OM)
+cor.test(sp,sh)
+
+cor.test(gb,ph)
+cor.test(gb,P)
+cor.test(gb,K)
+cor.test(gb,Ca)
+cor.test(gb,Mg)
+cor.test(gb,Al)
+cor.test(gb,OM)
+cor.test(gb,sh)
+
+cor.test(sh,ph)
+cor.test(sh,P)
+cor.test(sh,K)
+cor.test(sh,Ca)
+cor.test(sh,Mg)
+cor.test(sh,Al)
+cor.test(sh,OM)
+
 
 # 
 # ####THE RESULTS ABOVE SUGGEST ALL THE CORRELATIONS BETWEEN ENVT'L VARIABLES AND LIGHT WITH THE BIOLOGICAL ONES.  DO TWO PCAS
@@ -288,7 +324,7 @@ point.size<-cover.nosoil*0.1
 g_NOsoils <- ggbiplot(nest.env.pca.nosoil, obs.scale = 1, var.scale = 1, 
                     group = location.nosoil, ellipse = TRUE, 
                     circle = TRUE, varname.size=3)+
-  scale_colour_manual(values=c("darkred","orchid", "darkblue")) +
+  scale_colour_manual(values=c("darkred","orangered2", "darkblue")) +
   #geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
   geom_point(aes(color=location.nosoil, size = point.size)) + scale_size_identity()
 #I chose my own colors for the lines
