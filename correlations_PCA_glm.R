@@ -489,41 +489,11 @@ names(sdlgs.all)[5]<-"cover"
 ####################################################################
 # Nice overview of GLMs here: http://plantecology.syr.edu/fridley/bio793/glm.html
 
-
-##################
-### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 1
-##################
-
-
-glm1A = glm(sdlg.no ~ nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm1A)
-
-glm1B = glm(sdlg.no ~ location, data=sdlgs.nosoil,family=gaussian)
-summary(glm1B)
-
-glm1C = glm(sdlg.no ~ PCA1.nosoil, data=sdlgs.nosoil,family=gaussian)
-summary(glm1C)
-
-glm1D = glm(sdlg.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm1D)
-
-glm1E = glm(sdlg.no ~ PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm1E)
-
-glm1F = glm(sdlg.no ~ PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm1F)
-
-glm1G = glm(sdlg.no ~ location+PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm1G)
-
-AIC.NoSoils.PCA1.Sdlg<-AIC(glm1A,glm1B,glm1C, glm1D, glm1E, glm1F, glm1G)
-AIC.NoSoils.PCA1.Sdlg
-#LOWEST AIC - EFFECT OF LOCATION IS ALL YOU NEED TO FIT DATA FOR ABUNDNACE 
-
-
 ##################
 ### WITH SOILS DATA, IE, FEWER PLOTS - PCA AXIS 1
 ##################
+glm20 = glm(sdlg.no ~ 1, data=sdlgs.all,family=gaussian)
+summary(glm20)
 
 glm2A = glm(sdlg.no ~ nest, data=sdlgs.all,family=gaussian)
 summary(glm2A)
@@ -540,53 +510,21 @@ summary(glm2D)
 glm2E = glm(sdlg.no ~ PCA1.all+nest, data=sdlgs.all,family=gaussian)
 summary(glm2E)
 
-glm2F = glm(sdlg.no ~ PCA1.all+nest, data=sdlgs.all,family=gaussian)
+glm2F = glm(sdlg.no ~ location+PCA1.all+nest, data=sdlgs.all,family=gaussian)
 summary(glm2F)
 
-glm2G = glm(sdlg.no ~ location+PCA1.all+nest, data=sdlgs.all,family=gaussian)
-summary(glm2G)
-
-AIC.Soils.PCA1.Sdlg<-AIC(glm2A,glm2B,glm2C, glm2D, glm2E, glm2F, glm2G)
+AIC.Soils.PCA1.Sdlg<-AIC(glm20, glm2A,glm2B,glm2C, glm2D, glm2E, glm2F)
 AIC.Soils.PCA1.Sdlg
+DELTAAIC1<-AIC.Soils.PCA1.Sdlg$AIC-min(AIC.Soils.PCA1.Sdlg[,2])
+DELTAAIC1
+
 #LOWEST AIC - EFFECT OF LOCATION and NEST, but still no PCA (GRADIENT) EFFECT!!!
-
-
-
-##################
-### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 2
-##################
-
-
-glm3A = glm(sdlg.no ~ nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm3A)
-
-glm3B = glm(sdlg.no ~ location, data=sdlgs.nosoil,family=gaussian)
-summary(glm3B)
-
-glm3C = glm(sdlg.no ~ PCA2.nosoil, data=sdlgs.nosoil,family=gaussian)
-summary(glm3C)
-
-glm3D = glm(sdlg.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm3D)
-
-glm3E = glm(sdlg.no ~ PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm3E)
-
-glm3F = glm(sdlg.no ~ PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm3F)
-
-glm3G = glm(sdlg.no ~ location+PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm3G)
-
-AIC.NoSoils.PCA2.Sdlg<-AIC(glm3A,glm3B,glm3C, glm3D, glm3E, glm3F, glm3G)
-AIC.NoSoils.PCA2.Sdlg
-#LOWEST AIC - EFFECT OF LOCATION IS ALL YOU NEED TO FIT DATA FOR ABUNDNACE WITH PCA 2
-
-
 
 ##################
 ### WITH SOILS DATA, IE, FEWER PLOTS - PCA AXIS 2
 ##################
+glm40 = glm(sdlg.no ~ 1, data=sdlgs.all,family=gaussian)
+summary(glm40)
 
 glm4A = glm(sdlg.no ~ nest, data=sdlgs.all,family=gaussian)
 summary(glm4A)
@@ -603,58 +541,116 @@ summary(glm4D)
 glm4E = glm(sdlg.no ~ PCA2.all+nest, data=sdlgs.all,family=gaussian)
 summary(glm4E)
 
-glm4F = glm(sdlg.no ~ PCA2.all+nest, data=sdlgs.all,family=gaussian)
+glm4F = glm(sdlg.no ~ location+PCA2.all+nest, data=sdlgs.all,family=gaussian)
 summary(glm4F)
 
-glm4G = glm(sdlg.no ~ location+PCA2.all+nest, data=sdlgs.all,family=gaussian)
-summary(glm4G)
-
-AIC.Soils.PCA2.Sdlg<-AIC(glm4A,glm4B,glm4C, glm4D, glm4E, glm4F, glm4G)
+AIC.Soils.PCA2.Sdlg<-AIC(glm40, glm4A,glm4B,glm4C, glm4D, glm4E, glm4F)
 AIC.Soils.PCA2.Sdlg
+DELTAAIC2<-AIC.Soils.PCA2.Sdlg$AIC-min(AIC.Soils.PCA2.Sdlg[,2])
+DELTAAIC2
+
 #LOWEST AIC - EFFECT OF OCAm ALONE AND IN COMBINATION WITH LOCATION. GRADIENT 
 
+##################
+### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 1
+##################
+glm10 = glm(sdlg.no ~ 1, data=sdlgs.nosoil,family=gaussian)
+summary(glm10)
 
+glm1A = glm(sdlg.no ~ nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm1A)
+
+glm1B = glm(sdlg.no ~ location, data=sdlgs.nosoil,family=gaussian)
+summary(glm1B)
+
+glm1C = glm(sdlg.no ~ PCA1.nosoil, data=sdlgs.nosoil,family=gaussian)
+summary(glm1C)
+
+glm1D = glm(sdlg.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm1D)
+
+glm1E = glm(sdlg.no ~ PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm1E)
+
+glm1F = glm(sdlg.no ~ location+PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm1F)
+
+AIC.NoSoils.PCA1.Sdlg<-AIC(glm10,glm1A,glm1B,glm1C, glm1D, glm1E, glm1F)
+DELTAAIC3<-AIC.NoSoils.PCA1.Sdlg$AIC-min(AIC.NoSoils.PCA1.Sdlg[,2])
+DELTAAIC3
+#LOWEST AIC - EFFECT OF LOCATION IS ALL YOU NEED TO FIT DATA FOR ABUNDNACE 
+
+
+##################
+### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 2
+##################
+glm30 = glm(sdlg.no ~ 1, data=sdlgs.nosoil,family=gaussian)
+summary(glm30)
+
+glm3A = glm(sdlg.no ~ nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm3A)
+
+glm3B = glm(sdlg.no ~ location, data=sdlgs.nosoil,family=gaussian)
+summary(glm3B)
+
+glm3C = glm(sdlg.no ~ PCA2.nosoil, data=sdlgs.nosoil,family=gaussian)
+summary(glm3C)
+
+glm3D = glm(sdlg.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm3D)
+
+glm3E = glm(sdlg.no ~ PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm3E)
+
+glm3F = glm(sdlg.no ~ location+PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+summary(glm3F)
+
+AIC.NoSoils.PCA2.Sdlg<-AIC(glm30,glm3A,glm3B,glm3C, glm3D, glm3E, glm3F)
+AIC.NoSoils.PCA2.Sdlg
+DELTAAIC4<-AIC.NoSoils.PCA2.Sdlg$AIC-min(AIC.NoSoils.PCA2.Sdlg[,2])
+DELTAAIC4
+#LOWEST AIC - EFFECT OF LOCATION IS ALL YOU NEED TO FIT DATA FOR ABUNDNACE WITH PCA 2
 
 ####################################################################
 ################# WHAT FACTORS INFLUENCE SEEDLING SPP RICHNESS?  
 ####################################################################
 
-
-##################
-### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 1
-##################
-
-
-glm5A = glm(spp.no ~ nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm5A)
-
-glm5B = glm(spp.no ~ location, data=sdlgs.nosoil,family=gaussian)
-summary(glm5B)
-
-glm5C = glm(spp.no ~ PCA1.nosoil, data=sdlgs.nosoil,family=gaussian)
-summary(glm5C)
-
-glm5D = glm(spp.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm5D)
-
-glm5E = glm(spp.no ~ PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm5E)
-
-glm5F = glm(spp.no ~ PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm5F)
-
-glm5G = glm(spp.no ~ location+PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm5G)
-
-AIC.NoSoils.PCA1.Spp<-AIC(glm5A,glm5B,glm5C, glm5D, glm5E, glm5F, glm5G)
-AIC.NoSoils.PCA1.Spp
-#LOWEST AIC - EFFECTS OF LOCATION< NEST, AND COMBO OF NEST, GRADIENT, AND LOCATION. In other words, gradient effects diversity, but not abudnance
-#this makes sense - species have niche requirements that will vary (hoffmann)
-
-
 ##################
 ### WITH SOILS DATA, IE, FEWER PLOTS - PCA AXIS 1
 ##################
+glm50 = glm(spp.no ~ 1, data=sdlgs.all,family=gaussian)
+summary(glm50)
+
+glm5A = glm(spp.no ~ nest, data=sdlgs.all,family=gaussian)
+summary(glm5A)
+
+glm5B = glm(spp.no ~ location, data=sdlgs.all,family=gaussian)
+summary(glm5B)
+
+glm5C = glm(spp.no ~ PCA1.all, data=sdlgs.all,family=gaussian)
+summary(glm5C)
+
+glm5D = glm(spp.no ~ location+nest, data=sdlgs.all,family=gaussian)
+summary(glm5D)
+
+glm5E = glm(spp.no ~ PCA1.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm5E)
+
+glm5F = glm(spp.no ~ location+PCA1.all+nest, data=sdlgs.all,family=gaussian)
+summary(glm5F)
+
+AIC.Soils.PCA1.Spp<-AIC(glm50, glm5A,glm5B,glm5C, glm5D, glm5E, glm5F)
+AIC.Soils.PCA1.Spp
+DELTAAIC5<-AIC.Soils.PCA1.Spp$AIC-min(AIC.Soils.PCA1.Spp[,2])
+DELTAAIC5
+
+
+##################
+### WITH SOILS DATA, IE, FEWER PLOTS - PCA AXIS 2
+##################
+
+glm60 = glm(spp.no ~ 1, data=sdlgs.all,family=gaussian)
+summary(glm60)
 
 glm6A = glm(spp.no ~ nest, data=sdlgs.all,family=gaussian)
 summary(glm6A)
@@ -662,31 +658,30 @@ summary(glm6A)
 glm6B = glm(spp.no ~ location, data=sdlgs.all,family=gaussian)
 summary(glm6B)
 
-glm6C = glm(spp.no ~ PCA1.all, data=sdlgs.all,family=gaussian)
+glm6C = glm(spp.no ~ PCA2.all, data=sdlgs.all,family=gaussian)
 summary(glm6C)
 
 glm6D = glm(spp.no ~ location+nest, data=sdlgs.all,family=gaussian)
 summary(glm6D)
 
-glm6E = glm(spp.no ~ PCA1.all+nest, data=sdlgs.all,family=gaussian)
+glm6E = glm(spp.no ~ PCA2.all+nest, data=sdlgs.all,family=gaussian)
 summary(glm6E)
 
-glm6F = glm(spp.no ~ PCA1.all+nest, data=sdlgs.all,family=gaussian)
+glm6F = glm(spp.no ~ location+PCA2.all+nest, data=sdlgs.all,family=gaussian)
 summary(glm6F)
 
-glm6G = glm(spp.no ~ location+PCA1.all+nest, data=sdlgs.all,family=gaussian)
-summary(glm6G)
-
-AIC.Soils.PCA1.Spp<-AIC(glm6A,glm6B,glm6C, glm6D, glm6E, glm6F, glm6G)
-AIC.Soils.PCA1.Spp
-#LOWEST AIC - E...BUT DON't OVER INTERPET ABOVE. ITS REALLY SOILS THAT DRIVE DIVERSITY - you see that when you include the soils data in the PCA - and THIS IS INFLUENCED BY ANTS
+AIC.Soils.PCA2.Spp<-AIC(glm60, glm6A,glm6B,glm6C, glm6D, glm6E, glm6F)
+AIC.Soils.PCA2.Spp
+DELTAAIC6<-AIC.Soils.PCA2.Spp$AIC-min(AIC.Soils.PCA2.Spp[,2])
+DELTAAIC6
 
 
 
 ##################
-### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 2
+### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 1
 ##################
-
+glm70 = glm(spp.no ~ 1, data=sdlgs.nosoil,family=gaussian)
+summary(glm70)
 
 glm7A = glm(spp.no ~ nest, data=sdlgs.nosoil,family=gaussian)
 summary(glm7A)
@@ -694,55 +689,53 @@ summary(glm7A)
 glm7B = glm(spp.no ~ location, data=sdlgs.nosoil,family=gaussian)
 summary(glm7B)
 
-glm7C = glm(spp.no ~ PCA2.nosoil, data=sdlgs.nosoil,family=gaussian)
+glm7C = glm(spp.no ~ PCA1.nosoil, data=sdlgs.nosoil,family=gaussian)
 summary(glm7C)
 
 glm7D = glm(spp.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
 summary(glm7D)
 
-glm7E = glm(spp.no ~ PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+glm7E = glm(spp.no ~ PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
 summary(glm7E)
 
-glm7F = glm(spp.no ~ PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
+glm7F = glm(spp.no ~ location+PCA1.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
 summary(glm7F)
 
-glm7G = glm(spp.no ~ location+PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
-summary(glm7G)
-
-AIC.NoSoils.PCA2.Spp<-AIC(glm7A,glm7B,glm7C, glm7D, glm7E, glm7F, glm7G)
-AIC.NoSoils.PCA2.Spp
-#LOWEST AIC - LOCATION AND NEST AGAIN COME OUR IMPORTANT WHEN YOU DONT INCLUDE SOILS....
-
+AIC.NoSoils.PCA1.Spp<-AIC(glm70,glm7A,glm7B,glm7C, glm7D, glm7E, glm7F)
+DELTAAIC7<-AIC.NoSoils.PCA1.Spp$AIC-min(AIC.NoSoils.PCA1.Spp[,2])
+DELTAAIC7
 
 
 ##################
-### WITH SOILS DATA, IE, FEWER PLOTS - PCA AXIS 2
+### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 2
 ##################
+glm80 = glm(spp.no ~ 1, data=sdlgs.nosoil,family=gaussian)
+summary(glm80)
 
-glm8A = glm(spp.no ~ nest, data=sdlgs.all,family=gaussian)
+glm8A = glm(spp.no ~ nest, data=sdlgs.nosoil,family=gaussian)
 summary(glm8A)
 
-glm8B = glm(spp.no ~ location, data=sdlgs.all,family=gaussian)
+glm8B = glm(spp.no ~ location, data=sdlgs.nosoil,family=gaussian)
 summary(glm8B)
 
-glm8C = glm(spp.no ~ PCA2.all, data=sdlgs.all,family=gaussian)
+glm8C = glm(spp.no ~ PCA2.nosoil, data=sdlgs.nosoil,family=gaussian)
 summary(glm8C)
 
-glm8D = glm(spp.no ~ location+nest, data=sdlgs.all,family=gaussian)
+glm8D = glm(spp.no ~ location+nest, data=sdlgs.nosoil,family=gaussian)
 summary(glm8D)
 
-glm8E = glm(spp.no ~ PCA2.all+nest, data=sdlgs.all,family=gaussian)
+glm8E = glm(spp.no ~ PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
 summary(glm8E)
 
-glm8F = glm(spp.no ~ PCA2.all+nest, data=sdlgs.all,family=gaussian)
+glm8F = glm(spp.no ~ location+PCA2.nosoil+nest, data=sdlgs.nosoil,family=gaussian)
 summary(glm8F)
 
-glm8G = glm(spp.no ~ location+PCA2.all+nest, data=sdlgs.all,family=gaussian)
-summary(glm8G)
+AIC.NoSoils.PCA2.Spp<-AIC(glm80,glm8A,glm8B,glm8C, glm8D, glm8E, glm8F)
+AIC.NoSoils.PCA2.Spp
+DELTAAIC8<-AIC.NoSoils.PCA2.Spp$AIC-min(AIC.NoSoils.PCA2.Spp[,2])
+DELTAAIC8
+#LOWEST AIC - EFFECT OF LOCATION IS ALL YOU NEED TO FIT DATA FOR ABUNDNACE WITH PCA 2
 
-AIC.Soils.PCA2.Spp<-AIC(glm8A,glm8B,glm8C, glm8D, glm8E, glm8F, glm8G)
-AIC.Soils.PCA2.Spp
-#LOWEST AIC - ...BUT AXIS TWO AGAIN IMPORTATN WHEN YOU SOILS AGAIN PLAY A ROLE (THOUGH LESS FOR AXIS 1 than AXIS 2)
 
 
 
