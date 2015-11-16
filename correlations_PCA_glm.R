@@ -11,6 +11,11 @@ library(ggplot2)
 library(grid)
 library(gridExtra)
 library(reshape2)
+library(lme4)
+library(MuMIn)
+library(arm)
+
+
 
 
 #CLear out everything from the environment
@@ -424,8 +429,8 @@ str(VEG_both)
 # As an alternative, I will include plot.id, group, and count. This gives you the number of plots in your dataframe (with each plant having 
 # its associated plot in the long form table.  Yoiu then convert all 1 to 0 -> plots with no plants were counted as a single row
 # with an NA in it.  Ugly, but works
-
-VEG_both_hack<-select(VEG_both, nest, location, species, plot.id)
+select <- dplyr::select
+VEG_both_hack<-select(VEG_both,nest,location,species,plot.id)
 count.df<-VEG_both_hack %>%
   group_by(nest, location) %>%
   summarise(count = n())
@@ -491,6 +496,30 @@ names(sdlgs.all)[5]<-"cover"
 ################# WHAT FACTORS INFLUENCE SEEDLING COUNT?  
 ####################################################################
 # Nice overview of GLMs here: http://plantecology.syr.edu/fridley/bio793/glm.html
+
+###############
+#Need to consider nest a random effect
+#below is based on Grueber et al. 2011. J Evol Biol. 24:699-711.
+
+global.model<-glmer(sdlg.no ~ location + PCA1.nosoil + (1|nest), data = sdlgs.nosoil,family=gaussian, na.action = "na.fail")
+summary(global.model)
+# stdz.model<-standardize(global.model, standardize.y=FALSE)
+# model.set<-dredge(stdz.model)
+model.set<-dredge(global.model)
+top.models<-get.models(model.set, subset=delta<2)
+summary(top.models)
+
+
+global.model<-glmer(sdlg.no ~ location + PCA1.all + (1|nest), data = sdlgs.all,family=gaussian, na.action = "na.fail")
+summary(global.model)
+# stdz.model<-standardize(global.model, standardize.y=FALSE)
+# model.set<-dredge(stdz.model)
+model.set<-dredge(global.model)
+top.models<-get.models(model.set, subset=delta<2)
+summary(top.models)
+
+
+
 
 ##################
 ### NO SOILS DATA, IE, ALL THE PLOTS - PCA AXIS 1
