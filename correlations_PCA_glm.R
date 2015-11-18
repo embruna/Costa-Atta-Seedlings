@@ -499,24 +499,135 @@ names(sdlgs.all)[5]<-"cover"
 
 ###############
 #Need to consider nest a random effect
-#below is based on Grueber et al. 2011. J Evol Biol. 24:699-711.
+#below is based on Grueber et al. 2011. J Evol Biol. 24:699-711.  
+# Another good source is http://ase.tufts.edu/gsc/gradresources/guidetomixedmodelsinr/mixed%20model%20guide.html
+# for more on lmer/glmer error message:
+# http://stats.stackexchange.com/questions/35841/using-glmer-to-replicate-result-from-lmer-for-mulitlevel-modelling-in-r
+###################################
+####ALL PLOTS / NO SOIL / PCA1 ####
+###################################
 
-global.model<-glmer(sdlg.no ~ location + PCA1.nosoil + (1|nest), data = sdlgs.nosoil,family=gaussian, na.action = "na.fail")
+
+global.model<-glmer(sdlg.no ~ location + PCA1.nosoil + (1|nest), data = sdlgs.nosoil,family=poisson, na.action = "na.fail", REML=FALSE)
 summary(global.model)
+
+# testing for overdipsersion: http://glmm.wikidot.com/faq, Section "How can I deal with overdispersion in GLMMs?"
+overdisp_fun <- function(model) {
+  ## number of variance parameters in 
+  ##   an n-by-n variance-covariance matrix
+  vpars <- function(m) {
+    nrow(m)*(nrow(m)+1)/2
+  }
+  
+  model.df <- sum(sapply(VarCorr(model),vpars))+length(fixef(model))
+  rdf <- nrow(model.frame(model))-model.df
+  rp <- residuals(model,type="pearson")
+  Pearson.chisq <- sum(rp^2)
+  prat <- Pearson.chisq/rdf
+  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
+overdisp_fun(global.model)
+
+# #from http://glmm.wdfiles.com/local--files/examples/Owls.pdf
+# Check for overdispersion (Pearson residuals):
+rdev <- sum(residuals(global.model)^2)
+mdf <- length(fixef(global.model))
+rdf <- length(unique(sdlgs.nosoil$nest))-mdf ## residual df [NOT accounting for random effects]
+rdev/rdf
+# #Overdispersion is quite a bit if > 1 . . . significance test:
+ (prob.disp <- pchisq(rdev,rdf,lower.tail=FALSE,log.p=TRUE)) #This is a log probability, so if result was  -868.796 could correspond to p ≈ 10−377.)
+ # Here (with a hacked version of lme4 that allows per-observation random effects, i.e. a Poisson-lognormal distribution):
+ sdlgs.nosoil$obs <- 1:nrow(sdlgs.nosoil) ## add observation number to data
+ global.model.2 <- glmer(sdlg.no ~ location + PCA1.nosoil + (1|nest) + (1|obs), data = sdlgs.nosoil,family=poisson, na.action = "na.fail")
+ print(summary(global.model.2))
+
 # stdz.model<-standardize(global.model, standardize.y=FALSE)
 # model.set<-dredge(stdz.model)
-model.set<-dredge(global.model)
+model.set<-dredge(global.model.2)
 top.models<-get.models(model.set, subset=delta<2)
 summary(top.models)
 
+# compare with the following: 
+g1<-glmer(sdlg.no ~ location + (1|nest), data = sdlgs.nosoil,family=poisson, na.action = "na.fail")
+summary(g1)
+g2<-glmer(sdlg.no ~ PCA1.nosoil  + (1|nest), data = sdlgs.nosoil,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(g2)
+g3<-glmer(sdlg.no ~ (1|nest), data = sdlgs.nosoil,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(g3)
+AIC(global.model.2, global.model, g1, g2, g3)
 
-global.model<-glmer(sdlg.no ~ location + PCA1.all + (1|nest), data = sdlgs.all,family=gaussian, na.action = "na.fail")
+
+
+#####################################
+#### SUBSET PLOTS /  SOIL / PCA1 ####
+#####################################
+
+
+global.model<-glmer(sdlg.no ~ location + PCA1.nosoil + (1|nest), data = sdlgs.all,family=poisson, na.action = "na.fail", REML=FALSE)
 summary(global.model)
+
+# testing for overdipsersion: http://glmm.wikidot.com/faq, Section "How can I deal with overdispersion in GLMMs?"
+overdisp_fun <- function(model) {
+  ## number of variance parameters in 
+  ##   an n-by-n variance-covariance matrix
+  vpars <- function(m) {
+    nrow(m)*(nrow(m)+1)/2
+  }
+  
+  model.df <- sum(sapply(VarCorr(model),vpars))+length(fixef(model))
+  rdf <- nrow(model.frame(model))-model.df
+  rp <- residuals(model,type="pearson")
+  Pearson.chisq <- sum(rp^2)
+  prat <- Pearson.chisq/rdf
+  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
+overdisp_fun(global.model)
+
+# #from http://glmm.wdfiles.com/local--files/examples/Owls.pdf
+# Check for overdispersion (Pearson residuals):
+rdev <- sum(residuals(global.model)^2)
+mdf <- length(fixef(global.model))
+rdf <- length(unique(sdlgs.all$nest))-mdf ## residual df [NOT accounting for random effects]
+rdev/rdf
+# #Overdispersion is quite a bit if > 1 . . . significance test:
+(prob.disp <- pchisq(rdev,rdf,lower.tail=FALSE,log.p=TRUE)) #This is a log probability, so if result was  -868.796 could correspond to p ≈ 10−377.)
+# Here (with a hacked version of lme4 that allows per-observation random effects, i.e. a Poisson-lognormal distribution):
+sdlgs.all$obs <- 1:nrow(sdlgs.all) ## add observation number to data
+global.model.2 <- glmer(sdlg.no ~ location + PCA1.nosoil + (1|nest) + (1|obs), data = sdlgs.all,family=poisson, na.action = "na.fail")
+print(summary(global.model.2))
+
 # stdz.model<-standardize(global.model, standardize.y=FALSE)
 # model.set<-dredge(stdz.model)
-model.set<-dredge(global.model)
+model.set<-dredge(global.model.2)
 top.models<-get.models(model.set, subset=delta<2)
 summary(top.models)
+
+# compare with the following: 
+g1<-glmer(sdlg.no ~ location + (1|nest), data = sdlgs.all,family=poisson, na.action = "na.fail")
+summary(g1)
+g2<-glmer(sdlg.no ~ PCA1.nosoil  + (1|nest), data = sdlgs.all,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(g2)
+g3<-glmer(sdlg.no ~ (1|nest), data = sdlgs.all,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(g3)
+AIC(global.model.2, global.model, g1, g2, g3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
