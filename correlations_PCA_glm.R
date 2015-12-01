@@ -507,18 +507,18 @@ names(sdlgs.all)[5]<-"cover"
 ###################################
 # If you are using all the biotic and abiotic data collected for the PCA then you are using sdlgs.all BUT
 # this dataset only includes plot ON or AWAY from nests
-DATA<-droplevels(na.omit(sdlgs.all))
- COVARIATE<-DATA$PCA1.all
-# OR
-# COVARIATE<-DATA$PCA2.all
+# DATA<-droplevels(na.omit(sdlgs.all))
+#  COVARIATE<-DATA$PCA1.all
+# # OR
+#  COVARIATE<-DATA$PCA2.all
 
 
 
 # If you want to include all the plots - on, adjacent, and far from nests - then you are using sdlgs.nosoil because
 # this dataset does NOT have soils chem data
 DATA<-droplevels(na.omit(sdlgs.nosoil))
- COVARIATE<-DATA$PCA1.nosoil 
-# OR 
+#  COVARIATE<-DATA$PCA1.nosoil 
+# # OR 
 # COVARIATE<-DATA$PCA2.nosoil
 
 ###################################
@@ -526,7 +526,7 @@ DATA<-droplevels(na.omit(sdlgs.nosoil))
 ###################################
 RESPONSE<-DATA$sdlg.no  
 # OR 
-#RESPONSE<-DATA$spp.no
+RESPONSE<-DATA$spp.no
 
 ###################################
 # WHAT FIXED (main) EFFECT? 
@@ -595,20 +595,32 @@ g3<-glmer(RESPONSE ~ (1|nest), data = DATA,family=poisson, na.action = "na.fail"
 summary(g3)
 AIC(global.model.2, global.model, g1, g2, g3)
 
+# Graph of canopy cover for each plot by nest
+CanopyCoverFig<-ggplot(data=DATA, aes(x=location, y=perc.cover, group=nest)) +
+  geom_line(size=0.5) + geom_point(size=2.5, shape=22, fill="white")+ylab("Canopy Cover (%)")+xlab("Plot Location")+ scale_y_continuous(limit=c(0, 100))
 
 
+CanopyCoverFig<-CoverFig + theme_classic() + theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+                                    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), #sets colors of axes
+                                    plot.title = element_text(hjust=0.05, vjust=-1.8, face="bold", size=22),        #Sets title size, style, location
+                                    axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                    axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                    axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+                                    plot.margin = unit(c(1,3,2,1), "cm"))
+CanopyCoverFig
 
-
-
-
-
-
-
-
-
-
-
-
+# Analysis: 
+  hist(DATA$perc.cover)
+#http://www.stat.columbia.edu/~martin/W2024/R11.pdf
+DATA$prop.cover<-DATA$perc.cover/100
+canopy.model1<-glm(prop.cover ~ location + nest, data = DATA ,family=quasibinomial)
+canopy.model2<-glm(prop.cover ~ nest, data = DATA ,family=quasibinomial)
+canopy.model.intercept<-glm(prop.cover ~ 1, data = DATA ,family=quasibinomial)
+summary(canopy.model1)
+summary(canopy.model2)
+summary(canopy.model.intercept)
+anova(canopy.model2,canopy.model1, test="Chisq") #effect of location no benefit of including location
+anova(canopy.model.intercept,canopy.model2, test="Chisq") #including nest significantly improves over model with just intercept
 
 
 ##################
