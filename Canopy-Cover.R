@@ -75,7 +75,7 @@ my_grob_CR = grobTree(textGrob("B", x=0.05,  y=.95, gp=gpar(col="black", fontsiz
 
 CoverCD<-ggplot(NEST.DATA_CD, aes(x=location, y=perc.cover)) +
   geom_boxplot(outlier.colour = "darkblue", outlier.size = 3)+
-  ylab("grass biomass (g)") +  
+  ylab("% canopy cover (median)") +  
   #   xlab("Plot Location")+
   annotation_custom(my_grob_CR)
 CoverCD<-CoverCD+ggtitle("Cerrado Denso")
@@ -101,6 +101,15 @@ CoverCD
 main = textGrob("Canopy Cover", vjust = 0, gp = gpar(fontface = "bold", fontsize = 20))
 FigCanopyCOver<-grid.arrange(CoverCR,CoverCD,sub=main, ncol=2, nrow=1) 
 
+###
+##cover by plot as a function of canopy cover
+canopy.hab<-ggplot(data=NEST.DATA_both, aes(x=perc.cover, y=perc.cover, group=location, col=location, fill=location)) + 
+  geom_point(shape=16, size=3)+
+  ylab("cover") +  
+  xlab("Canopy cover (%)")+
+  geom_smooth(method=lm,se=FALSE)   # Add linear regression lines, Don't add shaded confidence region
 
 
 
+canopy.hab<- ggplot(data=NEST.DATA_both, aes(x=perc.cover, y=perc.cover, colour=location))
+canopy.hab<-canopy.hab+geom_line()

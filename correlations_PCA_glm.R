@@ -356,7 +356,7 @@ g_soils <-g_soils + theme_classic()+theme(legend.direction = 'horizontal',
 print(g_soils)
 
 #########################################
-## ANALYSES BASED ON PCA - NO SOILS
+## EXTRACTING COMPONENT SCORES - PCA NO SOILS
 #########################################
 
 #nest.env.pca$x =  scores for each of the plots for each PCA
@@ -369,7 +369,7 @@ names(GLM.DATA.nosoil)[5]<-"PCA2.nosoil" #rename the column
 
 
 #########################################
-## ANALYSES BASED ON PCA - WITH SOILS
+## EXTRACTING COMPONENT SCORES - PCA WITH SOILS
 #########################################
 
 #nest.env.pca$x =  scores for each of the plots for each PCA
@@ -507,16 +507,16 @@ names(sdlgs.all)[5]<-"cover"
 ###################################
 # If you are using all the biotic and abiotic data collected for the PCA then you are using sdlgs.all BUT
 # this dataset only includes plot ON or AWAY from nests
-# DATA<-droplevels(na.omit(sdlgs.all))
-#  COVARIATE<-DATA$PCA1.all
+ DATA<-droplevels(na.omit(sdlgs.all))
+  COVARIATE<-DATA$PCA1.all
 # # OR
 #  COVARIATE<-DATA$PCA2.all
 
 
 
 # If you want to include all the plots - on, adjacent, and far from nests - then you are using sdlgs.nosoil because
-# this dataset does NOT have soils chem data
-DATA<-droplevels(na.omit(sdlgs.nosoil))
+# # this dataset does NOT have soils chem data
+# DATA<-droplevels(na.omit(sdlgs.nosoil))
 #  COVARIATE<-DATA$PCA1.nosoil 
 # # OR 
 # COVARIATE<-DATA$PCA2.nosoil
