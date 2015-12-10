@@ -12,8 +12,10 @@ library(reshape2)
 library(lme4)
 library(MuMIn)
 library(arm)
-
+library(broom)
 #Clear out everything from the environment
+
+
 rm(list=ls())
 
 ######################################################
@@ -22,7 +24,7 @@ rm(list=ls())
 ######################################################
 ######################################################
 #Step 1: load the individual CSV files and save them as dataframes
-setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Data/Capitulo2")
+setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Data/Capitulo2") Costa et al MS 1 (Ch2)
 NEST.DATA<-read.csv("ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 #make plot locations an ordered factor nest<adjacent<far
 NEST.DATA$location=factor(NEST.DATA$location, levels=c("nest","adjacent", "far"), ordered=TRUE)
@@ -45,6 +47,49 @@ str(NEST.DATA.both)
 # Which of the habitats are you going to analyze? CD, CR, or both?
 NEST.DATA.PCA.ALL<-NEST.DATA.both #NEST.DATA.CD NEST.DATA.both NEST.DATA.CR 
 # 
+
+
+######################################################
+######################################################
+### Does Canopy Cover vary with Proimity to ant nests?  ie, do ants alter the canopy cover gradient?
+######################################################
+######################################################
+# analyses
+coverxhab<-select(NEST.DATA.both, one_of(c("habitat", "nest", "location", "perc.cover")))
+coverxhab<-droplevels(na.omit(coverxhab))
+coverxhab %>% group_by(location) %>% summarise(mean.perc.cover=mean(perc.cover))
+coverxhab %>% group_by(location) %>% summarise(var.perc.cover=var(perc.cover))
+# Nest identity is a random effect RANDOM<-(1|nest)
+coverxhab$cover.prop<-coverxhab$perc.cover/100
+coverxhab <- coverxhab[order(coverxhab$cover.prop),] 
+
+#logit trasnform and add smallest value to correct for zero as per http://www.esajournals.org/doi/full/10.1890/10-0340.1#appB
+coverxhab$logit.cover<-log10((coverxhab$cover.prop+0.01)/(1-coverxhab$cover.prop+0.01))
+hist(coverxhab$logit.cover)
+qqnorm(coverxhab$logit.cover)
+qqline(coverxhab$logit.cover)
+
+cover1<-lmer((logit.cover) ~  (1|nest), data = coverxhab)
+summary(cover1)
+cover2<-lmer(logit.cover ~ location + (1|nest), data = coverxhab)
+summary(cover2)
+AIC(cover1,cover2)
+anova(cover1, cover2, test = "Chisq")
+# 
+# see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
+summary.table.cover <- do.call(rbind, lapply(list(cover1, cover2), broom::glance))
+summary.table.cover[["model"]] <- 1:2
+table.cols <- c("model", "df.residual", "deviance", "AIC")
+reported.table <- summary.table.cover[table.cols]
+names(reported.table) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
+reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
+reported.table[['wAIC']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table$AIC <- NULL
+write.csv(reported.table, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/CoverxLocTable.csv", row.names = F) #export it as a csv file
+
+#Caption: Model selection for the random effect of nest (model 1) or plot location and nest (model 2)
+#on the canopy cover over plots (logit-transformed proportions).
+
 ######################################################
 ######################################################
 ### Correlations between variales
@@ -556,18 +601,34 @@ CoverEnv
 
 # analyses
 DATA<-droplevels(na.omit(sdlgs.all))
+
+
 COVARIATE<-DATA$cover
 RESPONSE<-DATA$PCA1.all
 FIXED<-DATA$location
 # Nest identity is a random effect RANDOM<-(1|nest)
-global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + (1|nest), data = DATA ,family=gaussian, na.action = "na.fail", REML=FALSE)
-summary(global.model)
+pca1.1<-lmer(RESPONSE ~ FIXED + COVARIATE + (1|nest), data = DATA)
+summary(pca1.1)
+pca1.2<-lmer(RESPONSE ~ COVARIATE + (1|nest), data = DATA)
+summary(pca1.2)
+pca1.3<-lmer(RESPONSE ~  (1|nest), data = DATA)
+summary(pca1.3)
+AIC(pca1.1,pca1.2,pca1.3)
+anova(pca1.1,pca1.2, pca1.3, test = "Chisq")
 
-# stdz.model<-standardize(global.model, standardize.y=FALSE)
-# model.set<-dredge(stdz.model)
-model.set<-dredge(global.model)
-top.models<-get.models(model.set, subset=delta<2)
-summary(top.models)
+# see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
+summary.table.pca1 <- do.call(rbind, lapply(list(pca1.1, pca1.2,pca1.3), broom::glance))
+summary.table.pca1[["model"]] <- 1:3
+table.cols <- c("model", "df.residual", "deviance", "AIC")
+reported.table.pca1 <- summary.table.pca1[table.cols]
+names(reported.table.pca1) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
+reported.table.pca1[['dAIC']] <-  with(reported.table.pca1, AIC - min(AIC))
+reported.table.pca1[['wAIC']] <- with(reported.table.pca1, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table.pca1$AIC <- NULL
+write.csv(reported.table.pca1, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/PCA1vLoc.csv", row.names = F) #export it as a csv file
+
+
+
 
 
 #########################################
@@ -615,14 +676,28 @@ COVARIATE<-DATA2$perc.cover
 RESPONSE<-DATA2$PCA2.nosoil
 FIXED<-DATA2$location
 # Nest identity is a random effect RANDOM<-(1|nest)
-global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + (1|nest), data = DATA2 ,family=gaussian, na.action = "na.fail", REML=FALSE)
-summary(global.model)
 
-# stdz.model<-standardize(global.model, standardize.y=FALSE)
-# model.set<-dredge(stdz.model)
-model.set<-dredge(global.model)
-top.models<-get.models(model.set, subset=delta<2)
-summary(top.models)
+# Nest identity is a random effect RANDOM<-(1|nest)
+pca2.1<-lmer(RESPONSE ~ FIXED + COVARIATE + (1|nest), data = DATA2)
+summary(pca2.1)
+pca2.2<-lmer(RESPONSE ~ COVARIATE + (1|nest), data = DATA2)
+summary(pca2.2)
+pca2.3<-lmer(RESPONSE ~  (1|nest), data = DATA2)
+summary(pca2.3)
+AIC(pca2.1,pca2.2,pca2.3)
+anova(pca2.1,pca2.2, pca2.3, test = "Chisq")
+
+# see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
+summary.table.pca2 <- do.call(rbind, lapply(list(pca2.1, pca2.2,pca2.3), broom::glance))
+summary.table.pca2[["model"]] <- 1:3
+table.cols <- c("model", "df.residual", "deviance", "AIC")
+reported.table.pca2 <- summary.table.pca2[table.cols]
+names(reported.table.pca2) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
+reported.table.pca2[['dAIC']] <-  with(reported.table.pca2, AIC - min(AIC))
+reported.table.pca2[['wAIC']] <- with(reported.table.pca2, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table.pca2$AIC <- NULL
+write.csv(reported.table.pca2, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/PCA2vLoc.csv", row.names = F) #export it as a csv file
+
 
 
 
@@ -648,12 +723,13 @@ COVARIATE<-DATA$PCA1.all
 COVARIATE2<-DATA$cover
 # # OR
 #  COVARIATE<-DATA$PCA2.all
+# 
+# # If you want to include all the plots - on, adjacent, and far from nests - then you are using sdlgs.nosoil because
+# # # this dataset does NOT have soils chem data
 
-# If you want to include all the plots - on, adjacent, and far from nests - then you are using sdlgs.nosoil because
-# # this dataset does NOT have soils chem data
-DATA<-droplevels(na.omit(sdlgs.nosoil))
-COVARIATE<-DATA$PCA1.nosoil
-COVARIATE2<-DATA$perc.cover
+# DATA<-droplevels(na.omit(sdlgs.nosoil))
+# COVARIATE<-DATA$PCA1.nosoil
+# COVARIATE2<-DATA$perc.cover
 # # OR 
 # COVARIATE<-DATA$PCA2.nosoil
 
@@ -678,12 +754,10 @@ FIXED<-DATA$location
 # may have to use quasi-poisson die to overdispersion
 
 
-global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2+ (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2+ (1|nest)+, data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
 summary(global.model)
 
 
-# global.model<-glmer(sdlg.no ~ location + PCA1.nosoil + (1|nest), data = sdlgs.nosoil,family=poisson, na.action = "na.fail", REML=FALSE)
-# summary(global.model)
 
 # testing for overdipsersion: http://glmm.wikidot.com/faq, Section "How can I deal with overdispersion in GLMMs?"
 overdisp_fun <- function(model) {
@@ -721,6 +795,45 @@ print(summary(global.model.2))
 model.set<-dredge(global.model.2)
 top.models<-get.models(model.set, subset=delta<2)
 summary(top.models)
+
+
+
+global.model1 <- glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2+ (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
+(summary(global.model1)
+
+global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2+ (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(global.model)
+
+global.model2<-glmer(RESPONSE ~ FIXED + COVARIATE +  (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(global.model2)
+
+global.model3<-glmer(RESPONSE ~ FIXED + COVARIATE2+ (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(global.model3)
+
+global.model4<-glmer(RESPONSE ~ COVARIATE + COVARIATE2+ (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(global.model4)
+
+global.model5<-glmer(RESPONSE ~ FIXED + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(global.model5)
+
+# Nest identity is a random effect RANDOM<-(1|nest)
+AIC(global.model1,global.model2,global.model3,global.model4,global.model5)
+anova(global.model1,global.model2,global.model3,global.model4,global.model5, test = "Chisq")
+
+# see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
+summary.table.global <- do.call(rbind, lapply(list(global.model1,global.model2,global.model3,global.model4,global.model5), broom::glance))
+summary.table.global[["model"]] <- 1:5
+table.cols <- c("model", "df.residual", "deviance", "AIC")
+reported.table.global <- summary.table.global[table.cols]
+names(reported.table.global) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
+reported.table.global[['dAIC']] <-  with(reported.table.global, AIC - min(AIC))
+reported.table.global[['wAIC']] <- with(reported.table.global, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table.global$AIC <- NULL
+write.csv(reported.table.global, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/global.csv", row.names = F) #export it as a csv file
+
+
+
+
 
 
 
