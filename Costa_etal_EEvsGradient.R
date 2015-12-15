@@ -24,8 +24,10 @@ rm(list=ls())
 ######################################################
 ######################################################
 #Step 1: load the individual CSV files and save them as dataframes
-setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Data/Capitulo2") Costa et al MS 1 (Ch2)
+setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Data/Capitulo2") 
 NEST.DATA<-read.csv("ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+# NEST.SIZE.DATA<-read.csv("nest-size-data.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+
 #make plot locations an ordered factor nest<adjacent<far
 NEST.DATA$location=factor(NEST.DATA$location, levels=c("nest","adjacent", "far"), ordered=TRUE)
 # Make Nest ID a factor
@@ -33,6 +35,8 @@ NEST.DATA$nest<-as.factor(NEST.DATA$nest)
 
 head(NEST.DATA, 3)
 str(NEST.DATA)
+# Make Nest ID a factor
+
 
 # #Select only Cerrado Denso and Cerrado Ralo
 NEST.DATA.both<-filter(NEST.DATA, habitat =="CD" | habitat == "CR")
@@ -55,30 +59,77 @@ NEST.DATA.PCA.ALL<-NEST.DATA.both #NEST.DATA.CD NEST.DATA.both NEST.DATA.CR
 ######################################################
 ######################################################
 # analyses
-coverxhab<-select(NEST.DATA.both, one_of(c("habitat", "nest", "location", "perc.cover")))
+str(NEST.DATA.both)
+coverxhab<-dplyr::select(NEST.DATA.both, habitat, nest, location, perc.cover, nest.area)
 coverxhab<-droplevels(na.omit(coverxhab))
 coverxhab %>% group_by(location) %>% summarise(mean.perc.cover=mean(perc.cover))
 coverxhab %>% group_by(location) %>% summarise(var.perc.cover=var(perc.cover))
 # Nest identity is a random effect RANDOM<-(1|nest)
 coverxhab$cover.prop<-coverxhab$perc.cover/100
 coverxhab <- coverxhab[order(coverxhab$cover.prop),] 
-
 #logit trasnform and add smallest value to correct for zero as per http://www.esajournals.org/doi/full/10.1890/10-0340.1#appB
 coverxhab$logit.cover<-log10((coverxhab$cover.prop+0.01)/(1-coverxhab$cover.prop+0.01))
 hist(coverxhab$logit.cover)
 qqnorm(coverxhab$logit.cover)
 qqline(coverxhab$logit.cover)
 
-cover1<-lmer((logit.cover) ~  (1|nest), data = coverxhab)
+bartlett.test(coverxhab$logit.cover ~ coverxhab$location)# Bartlett test of homogeneity of variances
+shapiro.test(resid(aov(coverxhab$logit.cover ~ coverxhab$location))) # Shapiro-Wilk normality test
+
+
+ggplot(coverxhab, aes(x=location, y=logit.cover, group = nest)) +
+  geom_point(shape=1) +    # Use hollow circles
+  geom_smooth(method=lm)  
+
+# IN ANCOVA where f is a factor and x is a covariate
+# Y ~ f * x  = different intercepts and slopes
+# Y ~ f + x  = specifies parallel slopes
+# Y ~ f    = specifies zero slopes but different intercepts
+# Y ~ x    = specifies single line
+
+options(na.action = "na.fail") #for calcl of QAIC see page 42: https://cran.r-project.org/web/packages/MuMIn/MuMIn.pdf
+# only random effect
+cover1<-lmer((logit.cover) ~ (1|nest), data = coverxhab, REML = TRUE)
 summary(cover1)
-cover2<-lmer(logit.cover ~ location + (1|nest), data = coverxhab)
+# zero slopes, different intercepts
+cover2<-lmer(logit.cover ~ location + (1|nest), data = coverxhab, REML = TRUE)
 summary(cover2)
-AIC(cover1,cover2)
-anova(cover1, cover2, test = "Chisq")
-# 
+# specifies single line
+cover3<-lmer(logit.cover ~  nest.area + (1|nest), data = coverxhab, REML = TRUE)
+summary(cover3)
+# specifies parallel slopes
+cover4<-lmer(logit.cover ~ location + nest.area + (1|nest), data = coverxhab, REML = TRUE)
+summary(cover4)
+# different intercepts and slopes
+cover5<-lmer(logit.cover ~ location * nest.area + (1|nest), data = coverxhab, REML = TRUE)
+summary(cover5)
+
+#plot deviance residuals against fitted values
+plot(cover5)
+
+
+AIC(cover1,cover2, cover3, cover4, cover5)
+anova(cover2, cover1, test = "Chisq")
+anova(cover3, cover1, test = "Chisq")
+anova(cover4, cover1, test = "Chisq")
+anova(cover5, cover1, test = "Chisq")
+anova(cover5, cover3, test = "Chisq")
+anova(cover5)
+
+# calclulating QAIC: Calculate a modification of Akaike's Information Criterion for overdispersed count data 
+# (or its version corrected for small sample, “quasi-AICc”), for one or several fitted model objects.
+(chat <- deviance(cover5) / df.residual(cover5))
+dredge(cover5, rank = "QAIC", chat = chat)
+dredge(cover5, rank = "AIC")
+
+# Need to generate table of:
+# random effect of nest identity (1)
+# plot proximity to ant nests, nest area, and nest identity (4)
+# main effects of nest area and plot location, their interaction, and nest identity (5)
 # see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
-summary.table.cover <- do.call(rbind, lapply(list(cover1, cover2), broom::glance))
-summary.table.cover[["model"]] <- 1:2
+# Summary table is of 
+summary.table.cover <- do.call(rbind, lapply(list(cover1, cover4, cover5), broom::glance))
+summary.table.cover[["model"]] <- 1:3
 table.cols <- c("model", "df.residual", "deviance", "AIC")
 reported.table <- summary.table.cover[table.cols]
 names(reported.table) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
@@ -89,6 +140,23 @@ write.csv(reported.table, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/C
 
 #Caption: Model selection for the random effect of nest (model 1) or plot location and nest (model 2)
 #on the canopy cover over plots (logit-transformed proportions).
+
+
+
+# Graph of canopy cover for each plot by nest
+CanopyCoverFig<-ggplot(data=DATA, aes(x=location, y=perc.cover, group=nest)) +
+  geom_line(size=0.5) + geom_point(size=2.5, shape=22, fill="white")+ylab("Canopy Cover (%)")+xlab("Plot Location")+ scale_y_continuous(limit=c(0, 100))
+
+
+CanopyCoverFig<-CanopyCoverFig + theme_classic() + theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+                                                         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), #sets colors of axes
+                                                         plot.title = element_text(hjust=0.05, vjust=-1.8, face="bold", size=22),        #Sets title size, style, location
+                                                         axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                                         axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                                         axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+                                                         plot.margin = unit(c(1,3,2,1), "cm"))
+CanopyCoverFig
+
 
 ######################################################
 ######################################################
@@ -259,9 +327,13 @@ summary(NEST.DATA.PCA.NOSOILS)
 # WITH CANOPY COVER INCLUDED TOGGLE THIS OFF. BUT FIRST CREATE A VECTOR OF CANOPY COVER IN CASE YOU NEED IT LATER
 cover.nosoils<-NEST.DATA.PCA.NOSOILS$perc.cover
 cover.ALL<-NEST.DATA.PCA.ALL$perc.cover
+nest.area.nosoils<-NEST.DATA.PCA.NOSOILS$nest.area
+nest.area.ALL<-NEST.DATA.PCA.ALL$nest.area
 
 NEST.DATA.PCA.ALL$perc.cover<-NULL
 NEST.DATA.PCA.NOSOILS$perc.cover<-NULL
+NEST.DATA.PCA.ALL$nest.area<-NULL
+NEST.DATA.PCA.NOSOILS$nest.area<-NULL
 
 # log transform 
 # env.vars <- log(NEST.DATA.PCA[, 5:18]+1)
@@ -527,11 +599,12 @@ sdlgs<-cbind(sdlgs, spp.df)
 names(sdlgs)[5]<-"spp.no" #rename the column
 str(sdlgs)
 
-# BIND THEM UP....add % cover!!!
-sdlgs.perc.cover<-select(NEST.DATA.both, plot.id, perc.cover)
+# BIND THEM UP....add % cover and nest area!!!
+sdlgs.perc.cover<-select(NEST.DATA.both, plot.id, perc.cover, nest.area)
 dim(sdlgs.perc.cover) #make sure same size as sdlgs dataframe
 sdlgs<-left_join(sdlgs, sdlgs.perc.cover, by = "plot.id")
 sdlgs<-na.omit(sdlgs)
+
 
 
 dim(sdlgs)
@@ -602,30 +675,52 @@ CoverEnv
 # analyses
 DATA<-droplevels(na.omit(sdlgs.all))
 
-
 COVARIATE<-DATA$cover
+COVARIATE2<-DATA$nest.area
 RESPONSE<-DATA$PCA1.all
 FIXED<-DATA$location
-# Nest identity is a random effect RANDOM<-(1|nest)
-pca1.1<-lmer(RESPONSE ~ FIXED + COVARIATE + (1|nest), data = DATA)
-summary(pca1.1)
-pca1.2<-lmer(RESPONSE ~ COVARIATE + (1|nest), data = DATA)
-summary(pca1.2)
-pca1.3<-lmer(RESPONSE ~  (1|nest), data = DATA)
-summary(pca1.3)
-AIC(pca1.1,pca1.2,pca1.3)
-anova(pca1.1,pca1.2, pca1.3, test = "Chisq")
+#DOES INCLUDING NEST AREA IMPROVE THE FIT OVER JUST random effect of NEST?
+pca1.covariate1<-lmer(RESPONSE ~ COVARIATE2 + (1|nest), data = DATA)
+summary(pca1.covariate1)
+pca1.nest<-lmer(RESPONSE ~  (1|nest), data = DATA)
+summary(pca1.nest)
+AIC(pca1.covariate1, pca1.nest)
+anova(pca1.covariate1,pca1.nest, test = "Chisq")
+#NO, SO DON't INCLUDE
 
+# Nest identity is a random effect RANDOM<-(1|nest)
+pca1.1<-lmer(RESPONSE ~   (1|nest), data = DATA)
+summary(pca1.1)
+pca1.2<-lmer(RESPONSE ~ FIXED + (1|nest), data = DATA)
+summary(pca1.2)
+pca1.3<-lmer(RESPONSE ~ COVARIATE + (1|nest), data = DATA)
+summary(pca1.3)
+pca1.4<-lmer(RESPONSE ~ FIXED + COVARIATE + (1|nest), data = DATA)
+summary(pca1.4)
+pca1.5<-lmer(RESPONSE ~ FIXED * COVARIATE + (1|nest), data = DATA)
+summary(pca1.5)
+
+AIC(pca1.5,pca1.4,pca1.3,pca1.2, pca1.1)
+anova(pca1.5,pca1.4,pca1.3,pca1.2, pca1.1, test = "Chisq")
+
+
+#Need table for models with
+#random effect of nest ID only (1)
+# effect of plot location + radnom
+# effect of canopy cover + radnom
+# effect of plot, canopy, random, but no interaction
+# but no interaction with canopy cover covariate 
 # see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
-summary.table.pca1 <- do.call(rbind, lapply(list(pca1.1, pca1.2,pca1.3), broom::glance))
-summary.table.pca1[["model"]] <- 1:3
+summary.table.pca1 <- do.call(rbind, lapply(list(pca1.1, pca1.2,pca1.3, pca1.4, pca1.5), broom::glance))
+summary.table.pca1[["model"]] <- 1:5
 table.cols <- c("model", "df.residual", "deviance", "AIC")
 reported.table.pca1 <- summary.table.pca1[table.cols]
 names(reported.table.pca1) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
 reported.table.pca1[['dAIC']] <-  with(reported.table.pca1, AIC - min(AIC))
 reported.table.pca1[['wAIC']] <- with(reported.table.pca1, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
 reported.table.pca1$AIC <- NULL
-write.csv(reported.table.pca1, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/PCA1vLoc.csv", row.names = F) #export it as a csv file
+reported.table.pca1 <- reported.table.pca1[order(reported.table.pca1$dAIC),]
+write.csv(reported.table.pca1, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/PCA2vLoc.csv", row.names = F) #export it as a csv file
 
 
 
@@ -671,34 +766,59 @@ CoverEnvAll<- CoverEnvAll + theme_classic()+
         plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
 CoverEnvAll
 
-
-COVARIATE<-DATA2$perc.cover
 RESPONSE<-DATA2$PCA2.nosoil
+COVARIATE<-DATA2$perc.cover
+COVARIATE2<-DATA2$nest.area
 FIXED<-DATA2$location
 # Nest identity is a random effect RANDOM<-(1|nest)
 
-# Nest identity is a random effect RANDOM<-(1|nest)
-pca2.1<-lmer(RESPONSE ~ FIXED + COVARIATE + (1|nest), data = DATA2)
-summary(pca2.1)
-pca2.2<-lmer(RESPONSE ~ COVARIATE + (1|nest), data = DATA2)
-summary(pca2.2)
-pca2.3<-lmer(RESPONSE ~  (1|nest), data = DATA2)
-summary(pca2.3)
-AIC(pca2.1,pca2.2,pca2.3)
-anova(pca2.1,pca2.2, pca2.3, test = "Chisq")
 
+#DOES INCLUDING COVARIATE HELP?
+pca2.covatiate2<-lmer(RESPONSE ~ COVARIATE2 + (1|nest), data = DATA2)
+summary(pca2.covatiate2)
+pca2.nest<-lmer(RESPONSE ~  (1|nest), data = DATA2)
+summary(pca2.covatiate2)
+AIC(pca2.covatiate2, pca2.nest)
+anova(pca2.covatiate2,pca2.nest, test = "Chisq")
+#NO!!!
+
+# Nest identity is a random effect RANDOM<-(1|nest)
+# random effect only
+pca2.1<-lmer(RESPONSE ~ (1|nest), data = DATA2)
+summary(pca2.1)
+# effect of location + random
+pca2.2<-lmer(RESPONSE ~ FIXED + (1|nest), data = DATA2)
+summary(pca2.2)
+# effect of cover + random
+pca2.3<-lmer(RESPONSE ~ COVARIATE + (1|nest), data = DATA2)
+summary(pca2.3)
+#effect of both + random (no interaction)
+pca2.4<-lmer(RESPONSE ~ FIXED + COVARIATE + (1|nest), data = DATA2)
+summary(pca2.4)
+#effect of both, their interaction,and random
+pca2.5<-lmer(RESPONSE ~ FIXED * COVARIATE + (1|nest), data = DATA2)
+summary(pca2.5)
+
+AIC(pca2.1,pca2.2,pca2.3,pca2.4,pca2.5)
+anova(pca2.1,pca2.2, pca2.3,pca2.4,pca2.5,test = "Chisq")
+
+#Need table for models with
+#random effect of nest ID only (1)
+# effect of plot location + radnom
+# effect of canopy cover + radnom
+# effect of plot, canopy, random, but no interaction
+# but no interaction with canopy cover covariate 
 # see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
-summary.table.pca2 <- do.call(rbind, lapply(list(pca2.1, pca2.2,pca2.3), broom::glance))
-summary.table.pca2[["model"]] <- 1:3
+summary.table.pca2 <- do.call(rbind, lapply(list(pca2.1, pca2.2,pca2.3, pca2.4, pca2.5), broom::glance))
+summary.table.pca2[["model"]] <- 1:5
 table.cols <- c("model", "df.residual", "deviance", "AIC")
 reported.table.pca2 <- summary.table.pca2[table.cols]
 names(reported.table.pca2) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
 reported.table.pca2[['dAIC']] <-  with(reported.table.pca2, AIC - min(AIC))
 reported.table.pca2[['wAIC']] <- with(reported.table.pca2, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
 reported.table.pca2$AIC <- NULL
+reported.table.pca2 <- reported.table.pca2[order(reported.table.pca2$dAIC),]
 write.csv(reported.table.pca2, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/PCA2vLoc.csv", row.names = F) #export it as a csv file
-
-
 
 
 
@@ -717,21 +837,22 @@ write.csv(reported.table.pca2, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/A
 # WHICH DATASET and COVARIATE? 
 ###################################
 # If you are using all the biotic and abiotic data collected for the PCA then you are using sdlgs.all BUT
-# this dataset only includes plot ON or AWAY from nests
-DATA<-droplevels(na.omit(sdlgs.all))
-COVARIATE<-DATA$PCA1.all
-COVARIATE2<-DATA$cover
-# # OR
+# # this dataset only includes plot ON or AWAY from nests
+# DATA<-droplevels(na.omit(sdlgs.all))
+# COVARIATE<-DATA$PCA1.all
+# COVARIATE2<-DATA$cover
+# COVARIATE3<-DATA$nest.area
+# 
+# # # OR
 #  COVARIATE<-DATA$PCA2.all
 # 
 # # If you want to include all the plots - on, adjacent, and far from nests - then you are using sdlgs.nosoil because
 # # # this dataset does NOT have soils chem data
 
-# DATA<-droplevels(na.omit(sdlgs.nosoil))
-# COVARIATE<-DATA$PCA1.nosoil
-# COVARIATE2<-DATA$perc.cover
-# # OR 
-# COVARIATE<-DATA$PCA2.nosoil
+DATA<-droplevels(na.omit(sdlgs.nosoil))
+COVARIATE<-DATA$PCA1.nosoil
+COVARIATE2<-DATA$perc.cover
+COVARIATE3<-DATA$nest.area
 
 ###################################
 # WHAT RESPONSE VARIABLE? Seedling number per plot or seedling species richness per plot?
@@ -753,8 +874,18 @@ FIXED<-DATA$location
 # distribution family: poisson for starters because both are counts
 # may have to use quasi-poisson die to overdispersion
 
+#DOES IT HELP TO INCLUDE NEST AREA?
+global.cov3<-glmer(RESPONSE ~ COVARIATE3 + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(global.cov3)
 
-global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2+ (1|nest)+, data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+global.nest<-glmer(RESPONSE ~  (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(global.nest)
+
+AIC(global.cov3,global.nest)
+anova(global.cov3,global.nest, test = "Chisq")
+# DELTA AIC IS SO SMALL, LETS INCLUDE
+
+global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
 summary(global.model)
 
 
@@ -787,7 +918,7 @@ rdev/rdf
 (prob.disp <- pchisq(rdev,rdf,lower.tail=FALSE,log.p=TRUE)) #This is a log probability, so if result was  -868.796 could correspond to p ≈ 10−377.)
 # Here (with a hacked version of lme4 that allows per-observation random effects, i.e. a Poisson-lognormal distribution):
 DATA$obs <- 1:nrow(DATA) ## add observation number to data
-global.model.2 <- glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2+ (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
+global.model.2 <- glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
 print(summary(global.model.2))
 
 # stdz.model<-standardize(global.model, standardize.y=FALSE)
@@ -797,63 +928,48 @@ top.models<-get.models(model.set, subset=delta<2)
 summary(top.models)
 
 
-
-global.model1 <- glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2+ (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-(summary(global.model1)
-
-global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2+ (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model)
-
-global.model2<-glmer(RESPONSE ~ FIXED + COVARIATE +  (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+#random effects 
+global.model1 <- glmer(RESPONSE ~  (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
+summary(global.model1)
+# gradient + random
+global.model2 <- glmer(RESPONSE ~ COVARIATE2 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
 summary(global.model2)
+# ant-related + random FOR PCA2
+# global.model3<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+# summary(global.model3)
+# BOTH of gradient and ant FOR PCA2
+# global.model4<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+# summary(global.model4)
 
-global.model3<-glmer(RESPONSE ~ FIXED + COVARIATE2+ (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+# ant-related + random FOR PCA1
+global.model3<-glmer(RESPONSE ~ FIXED +  COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
 summary(global.model3)
-
-global.model4<-glmer(RESPONSE ~ COVARIATE + COVARIATE2+ (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+# BOTH of gradient and ant for PCA!
+global.model4<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
 summary(global.model4)
 
-global.model5<-glmer(RESPONSE ~ FIXED + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model5)
-
 # Nest identity is a random effect RANDOM<-(1|nest)
-AIC(global.model1,global.model2,global.model3,global.model4,global.model5)
-anova(global.model1,global.model2,global.model3,global.model4,global.model5, test = "Chisq")
+AIC(global.model1,global.model2,global.model3,global.model4)
+anova(global.model1,global.model2,global.model3,global.model4, test = "Chisq")
+
+# 1: random effects 
+# 2: gradient + random
+# 3: ant-related + random
+# 4: Interaction of gradient and ant
 
 # see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
-summary.table.global <- do.call(rbind, lapply(list(global.model1,global.model2,global.model3,global.model4,global.model5), broom::glance))
-summary.table.global[["model"]] <- 1:5
+summary.table.global <- do.call(rbind, lapply(list(global.model1,global.model2,global.model3,global.model4), broom::glance))
+summary.table.global[["model"]] <- 1:4
 table.cols <- c("model", "df.residual", "deviance", "AIC")
 reported.table.global <- summary.table.global[table.cols]
 names(reported.table.global) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
 reported.table.global[['dAIC']] <-  with(reported.table.global, AIC - min(AIC))
 reported.table.global[['wAIC']] <- with(reported.table.global, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
 reported.table.global$AIC <- NULL
+reported.table.global <- reported.table.global[order(reported.table.global$dAIC),]
+round (reported.table.global, digits = 4)
 write.csv(reported.table.global, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/global.csv", row.names = F) #export it as a csv file
 
-
-
-
-
-
-
-
-
-# Graph of canopy cover for each plot by nest
-CanopyCoverFig<-ggplot(data=DATA, aes(x=location, y=perc.cover, group=nest)) +
-  geom_line(size=0.5) + geom_point(size=2.5, shape=22, fill="white")+ylab("Canopy Cover (%)")+xlab("Plot Location")+ scale_y_continuous(limit=c(0, 100))
-
-
-CanopyCoverFig<-CanopyCoverFig + theme_classic() + theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
-                                                         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), #sets colors of axes
-                                                         plot.title = element_text(hjust=0.05, vjust=-1.8, face="bold", size=22),        #Sets title size, style, location
-                                                         axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                                         axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                                         axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
-                                                         plot.margin = unit(c(1,3,2,1), "cm"))
-CanopyCoverFig
-
-#######################
 
 
 #############################
@@ -950,6 +1066,40 @@ SUMM3 <- sdlgs.nosoil %>%
 common.spp<-as.data.frame(count(VEG_both, species))
 common.spp<-common.spp[order(-common.spp$n),] #- to make it descending order
 
+##FGigures of individual variables measured 
+# with dataset = NEST.DATA.PCA.NOSOILS
+# grass.bmass
+# litter.bmass
+# soil.pen
+# soil.humid.surface
+
+var.fig<-ggplot(NEST.DATA.PCA.NOSOILS, aes(x = perc.cover, y = grass.bmass, col=location, fill=location)) + 
+  geom_point(shape=16, size = 3) +
+  ylab("grass biomass") +
+  xlab("Canopy cover (%)")+
+  ggtitle("A")+
+  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
+var.fig<-var.fig + scale_colour_manual(values=c("darkred","orangered2", "darkblue"))  #I chose my own colors for the lines
+# var.fig<-var.fig + scale_y_continuous(breaks = seq(0, 30, 5), limits = c(-5, 30))
+var.fig<-var.fig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-5, 100))
+var.fig<- var.fig + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 18, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+        #legend.position = 'none',
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        legend.position = c(0.9,0.8),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+var.fig
+
+
+
+
+
 
 
 
@@ -996,23 +1146,6 @@ summary(canopy.model2)
 summary(canopy.model.intercept)
 anova(canopy.model2,canopy.model1, test="Chisq") #effect of location no benefit of including location
 anova(canopy.model.intercept,canopy.model2, test="Chisq") #including nest significantly improves over model with just intercept
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1073,58 +1206,16 @@ ggplot(data=PCAfigData, aes(x=location, y=PCA.Score, group=nest)) +
   geom_line() +
   geom_point()
 
-
-
-
-# for quesiton on dot colors posted on stack overflow
-# http://stackoverflow.com/questions/30968563/ggbiplot-how-to-maintain-group-colors-after-changing-point-size
-
-env.vars<-data.frame(replicate(5,sample(0:10,20,rep=TRUE)))
-cover<-c(89, 92, 72, 53, 88, 89, 71, 83, 71, 66, 23, 30,  5, 15, 57, 54,0, 23, 9, 16)
-location<-c("location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2")
-point.size<-cover*0.1
-
-
-
-
-
-# #########
-# PCA 1 v canopy cover IF caniopy cover not in PCA
-# ############
-
-# #################
-# ## FOR PCA AXIS 1: effects of nest, location on envtl conditions
-# #################
-# add a continuous predictor variable, fit the new glm and test it against a model with only an intercept:
-plot(GLM.DATA$cover,GLM.DATA$PCA1)
-
-ggplot(GLM.DATA, aes(x=cover, y=PCA1, col=location)) + geom_point(shape=16, size = 3)+  ylab("PCA Score") +   xlab("Canopy cover (%)")+geom_smooth(method=lm, se=FALSE)    # Don't add shaded confidence region
-
-
-glmAA = glm(PCA1 ~ nest, data=GLM.DATA,family=gaussian)
-summary(glmAA)
-
-glmBB = glm(PCA1 ~ location, data=GLM.DATA,family=gaussian)
-summary(glmBB)
-
-glmCC = glm(PCA1 ~ cover, data=GLM.DATA,family=gaussian)
-summary(glmBB)
-
-glmDD = glm(PCA1 ~ location+nest+cover, data=GLM.DATA,family=gaussian)
-summary(glmDD)
-
-glmEE = glm(PCA1 ~ location+cover, data=GLM.DATA,family=gaussian)
-summary(glmEE)
-
-glmFF = glm(PCA1 ~ location+nest, data=GLM.DATA,family=gaussian)
-summary(glmDD)
-
-glmGG = glm(PCA1 ~ nest+cover, data=GLM.DATA,family=gaussian)
-summary(glmGG)
-
-
-AIC(glmAA,glmBB,glmCC, glmDD, glmEE, glmFF, glmGG)
-
-
-#Result: model 2 better fit
+# 
+# 
+# 
+# # for quesiton on dot colors posted on stack overflow
+# # http://stackoverflow.com/questions/30968563/ggbiplot-how-to-maintain-group-colors-after-changing-point-size
+# 
+# env.vars<-data.frame(replicate(5,sample(0:10,20,rep=TRUE)))
+# cover<-c(89, 92, 72, 53, 88, 89, 71, 83, 71, 66, 23, 30,  5, 15, 57, 54,0, 23, 9, 16)
+# location<-c("location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2", "location1", "location2")
+# point.size<-cover*0.1
+# 
+# 
 # 
