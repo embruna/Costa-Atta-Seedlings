@@ -52,10 +52,45 @@ str(NEST.DATA.both)
 NEST.DATA.PCA.ALL<-NEST.DATA.both #NEST.DATA.CD NEST.DATA.both NEST.DATA.CR 
 # 
 
+######################################################
+######################################################
+### Histogram of Canopu Cover Gradient
+### FIG 1A
+######################################################
+######################################################
+
+perc.cover.fig<-ggplot(NEST.DATA.PCA.ALL, aes(x=perc.cover, fill=habitat)) +
+  geom_histogram(binwidth=5, alpha=.7, position="identity", colour="black")+
+  scale_fill_grey(start=0.5, end=1, labels = c("Cerrado ralo","Cerrado denso"))+
+  ylab("No. of plots") + 
+  xlab("Canopy Cover (%)")+
+  annotate ("text", x=1.5, y=8, label="A", fontface="bold", size=8, color="black")+
+  guides(fill = guide_legend(nrow=2,byrow=TRUE, override.aes = list(colour = NULL))) #remove slash from legend
+
+perc.cover.fig<- perc.cover.fig + theme_classic()+theme(plot.title = element_text(face="bold", size=20),        #Sets title size, style, location
+                                                        legend.position=c(0.5,0.95),
+                                                        axis.title.x=element_text(colour="black", size = 20, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                                        axis.title.y=element_text(colour="black", size = 20, vjust=1.5),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                                        axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+                                                        legend.title = element_blank(),                                  #Removes the Legend title
+                                                        #legend.key = element_blank(),                                  #Removes the boxes around legend colors
+                                                        legend.text = element_text(face="italic", color="black", size=16),
+                                                        legend.position = "none",                                            
+                                                        legend.key = element_rect(colour = "black")) #puts black line around legend box
+                                                      
+perc.cover.fig                                                       
+  
+
+
+
+#################
+
+
 
 ######################################################
 ######################################################
 ### Does Canopy Cover vary with Proimity to ant nests?  ie, do ants alter the canopy cover gradient?
+### FIG 1B
 ######################################################
 ######################################################
 # analyses
@@ -144,15 +179,20 @@ write.csv(reported.table, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/C
 
 
 # Graph of canopy cover for each plot by nest
-CanopyCoverFig<-ggplot(data=DATA, aes(x=location, y=perc.cover, group=nest)) +
-  geom_line(size=0.5) + geom_point(size=2.5, shape=22, fill="white")+ylab("Canopy Cover (%)")+xlab("Plot Location")+ scale_y_continuous(limit=c(0, 100))
-
+CanopyCoverFig<-ggplot(data=coverxhab, aes(x=location, y=perc.cover, group=nest)) +
+    geom_line(size=0.5) + geom_point(size=4, aes(colour=location))+ylab("Canopy Cover (%)")+xlab("Plot Location")+ 
+    scale_y_continuous(limit=c(0, 100))+
+    scale_colour_manual(values=c("darkred","orangered2", "darkblue"))+
+    scale_fill_manual(values=c("darkred","orangered2", "darkblue"))+
+    annotate ("text", x=0.7, y=95, label="B", fontface=
+            "bold", size=8, color="black")
 
 CanopyCoverFig<-CanopyCoverFig + theme_classic() + theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
                                                          panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), #sets colors of axes
                                                          plot.title = element_text(hjust=0.05, vjust=-1.8, face="bold", size=22),        #Sets title size, style, location
                                                          axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
                                                          axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                                         legend.position = "none",
                                                          axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
                                                          plot.margin = unit(c(1,3,2,1), "cm"))
 CanopyCoverFig
@@ -838,21 +878,21 @@ write.csv(reported.table.pca2, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/A
 ###################################
 # If you are using all the biotic and abiotic data collected for the PCA then you are using sdlgs.all BUT
 # # this dataset only includes plot ON or AWAY from nests
-# DATA<-droplevels(na.omit(sdlgs.all))
-# COVARIATE<-DATA$PCA1.all
-# COVARIATE2<-DATA$cover
-# COVARIATE3<-DATA$nest.area
-# 
+DATA<-droplevels(na.omit(sdlgs.all))
+COVARIATE<-DATA$PCA1.all
+COVARIATE2<-DATA$cover
+COVARIATE3<-DATA$nest.area
+
 # # # OR
 #  COVARIATE<-DATA$PCA2.all
 # 
 # # If you want to include all the plots - on, adjacent, and far from nests - then you are using sdlgs.nosoil because
 # # # this dataset does NOT have soils chem data
 
-DATA<-droplevels(na.omit(sdlgs.nosoil))
-COVARIATE<-DATA$PCA1.nosoil
-COVARIATE2<-DATA$perc.cover
-COVARIATE3<-DATA$nest.area
+# DATA<-droplevels(na.omit(sdlgs.nosoil))
+# COVARIATE<-DATA$PCA1.nosoil
+# COVARIATE2<-DATA$perc.cover
+# COVARIATE3<-DATA$nest.area
 
 ###################################
 # WHAT RESPONSE VARIABLE? Seedling number per plot or seedling species richness per plot?
@@ -1060,7 +1100,7 @@ SUMM2 <- sdlgs.nosoil %>%
 SUMM3 <- sdlgs.nosoil %>%
   group_by(location) %>%
   summarise_each(funs(sd(., na.rm = TRUE)))
-
+sum(sdlgs.nosoil$sdlg.no)
 
 # This tells you the common species in our survey
 common.spp<-as.data.frame(count(VEG_both, species))
@@ -1073,11 +1113,11 @@ common.spp<-common.spp[order(-common.spp$n),] #- to make it descending order
 # soil.pen
 # soil.humid.surface
 
-var.fig<-ggplot(NEST.DATA.PCA.NOSOILS, aes(x = perc.cover, y = grass.bmass, col=location, fill=location)) + 
+var.fig<-ggplot(NEST.DATA.PCA.NOSOILS, aes(x = perc.cover, y = soil.humid.surface, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
-  ylab("grass biomass") +
+  ylab("soil humidity") +
   xlab("Canopy cover (%)")+
-  ggtitle("A")+
+  ggtitle("D")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
 var.fig<-var.fig + scale_colour_manual(values=c("darkred","orangered2", "darkblue"))  #I chose my own colors for the lines
