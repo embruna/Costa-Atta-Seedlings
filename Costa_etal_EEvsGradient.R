@@ -690,8 +690,8 @@ cor.test(DATA$cover,DATA$PCA2.all)
 CoverEnv<-ggplot(DATA, aes(x = cover, y = PCA1.all, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("PCA1") +
-  xlab("cover")+
-  ggtitle("B")+
+  xlab("Canopy cover (%")+
+  ggtitle("A")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
 CoverEnv<-CoverEnv + scale_colour_manual(values=c("darkred", "darkblue"))  #I chose my own colors for the lines
@@ -786,8 +786,8 @@ cor.test(DATA2$perc.cover,DATA2$PCA2.nosoil)
 CoverEnvAll<-ggplot(DATA2, aes(x = perc.cover, y = PCA1.nosoil, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("PCA1") +
-  xlab("cover")+
-  ggtitle("B")+
+  xlab("Canopy cover (%)")+
+  ggtitle("A")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
 CoverEnvAll<-CoverEnvAll + scale_colour_manual(values=c("darkred", "orangered2","darkblue"))  #I chose my own colors for the lines
