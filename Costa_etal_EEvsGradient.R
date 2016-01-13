@@ -468,7 +468,7 @@ g_NOsoils <- ggbiplot(nest.env.pca.nosoil, obs.scale = 1, var.scale = 1,
                       group = location.nosoil, ellipse = TRUE, 
                       circle = TRUE, varname.size=3)+
   scale_colour_manual(values=c("darkred","orangered2", "darkblue")) +
-  annotate ("text", x=-3.5, y=3, label="A", fotnface=
+  annotate ("text", x=-3.5, y=3, label="A) PCA-all", fotnface=
               "bold", size=8, color="black")+
   #geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
   geom_point(aes(color=location.nosoil, size = point.size)) + scale_size_identity()
@@ -510,7 +510,7 @@ g_soils <- ggbiplot(nest.env.pca.all, obs.scale = 1, var.scale = 1,
                     group = location.all, ellipse = TRUE, 
                     circle = TRUE, varname.size=3)+
   scale_colour_manual(values=c("darkred", "darkblue")) +
-  annotate ("text", x=-4.5, y=3, label="B", fotnface=
+  annotate ("text", x=-4.5, y=3, label="B) PCA-soils", fotnface=
               "bold", size=8, color="black")+
   #geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
   geom_point(aes(color=location.all, size = point.size)) + scale_size_identity()
@@ -686,12 +686,14 @@ DATA<-droplevels(na.omit(sdlgs.all))
 cor.test(DATA$cover,DATA$PCA1.all)
 cor.test(DATA$cover,DATA$PCA2.all)
 
-# Plot: PCA vs. canopy cover
+
+
+# Plot: PCA-with-soils vs. canopy cover
 CoverEnv<-ggplot(DATA, aes(x = cover, y = PCA1.all, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
-  ylab("PCA1") +
-  xlab("Canopy cover (%")+
-  ggtitle("A")+
+  ylab("Axis 1 score") +
+  xlab("Canopy cover (%)")+
+  ggtitle("B) PCA-soils")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
 CoverEnv<-CoverEnv + scale_colour_manual(values=c("darkred", "darkblue"))  #I chose my own colors for the lines
@@ -706,9 +708,9 @@ CoverEnv<- CoverEnv + theme_classic()+
         #legend.position = 'none',
         legend.title = element_blank(),   #Removes the Legend title
         legend.text = element_text(color="black", size=16),  
-        legend.position = c(0.2,0.9),
+        legend.position = c(0.1,0.8),
         legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
-        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+        plot.margin =unit(c(0,1,1,1.8), "cm")) #+  #plot margin - top, right, bottom, left
 CoverEnv
 
 
@@ -785,9 +787,9 @@ cor.test(DATA2$perc.cover,DATA2$PCA2.nosoil)
 # Figure
 CoverEnvAll<-ggplot(DATA2, aes(x = perc.cover, y = PCA1.nosoil, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
-  ylab("PCA1") +
+  ylab("Axis 1 score") +
   xlab("Canopy cover (%)")+
-  ggtitle("A")+
+  ggtitle("A) PCA-all")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
 CoverEnvAll<-CoverEnvAll + scale_colour_manual(values=c("darkred", "orangered2","darkblue"))  #I chose my own colors for the lines
@@ -801,9 +803,9 @@ CoverEnvAll<- CoverEnvAll + theme_classic()+
         #legend.position = 'none',
         legend.title = element_blank(),   #Removes the Legend title
         legend.text = element_text(color="black", size=16),  
-        legend.position = c(0.2,0.9),
+        legend.position = c(0.15,0.75),
         legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
-        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+        plot.margin =unit(c(0,1,1,1.5), "cm")) #+  #plot margin - top, right, bottom, left
 CoverEnvAll
 
 RESPONSE<-DATA2$PCA2.nosoil
@@ -1041,7 +1043,7 @@ canopy.sdlgs.fig1<- canopy.sdlgs.fig1 + theme_classic()+
         legend.text = element_text(color="black", size=16),  
         legend.position = c(0.9,0.8),
         legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
-        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+        plot.margin =unit(c(0,1,1,1.5), "cm")) #+  #plot margin - top, right, bottom, left
 canopy.sdlgs.fig1
 
 
@@ -1066,7 +1068,7 @@ canopy.sdlgs.fig2<- canopy.sdlgs.fig2 + theme_classic()+
         legend.text = element_text(color="black", size=16),  
         legend.position = c(0.9,0.8),
         legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
-        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+        plot.margin =unit(c(0,1,1,1.5), "cm")) #+  #plot margin - top, right, bottom, left
 canopy.sdlgs.fig2
 
 
