@@ -468,7 +468,7 @@ g_NOsoils <- ggbiplot(nest.env.pca.nosoil, obs.scale = 1, var.scale = 1,
                       group = location.nosoil, ellipse = TRUE, 
                       circle = TRUE, varname.size=3)+
   scale_colour_manual(values=c("darkred","orangered2", "darkblue")) +
-  annotate ("text", x=-3.5, y=3, label="A) PCA-all", fotnface=
+  annotate ("text", x=-3.5, y=3, label="A) PCA-E", fotnface=
               "bold", size=8, color="black")+
   #geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
   geom_point(aes(color=location.nosoil, size = point.size)) + scale_size_identity()
@@ -510,7 +510,7 @@ g_soils <- ggbiplot(nest.env.pca.all, obs.scale = 1, var.scale = 1,
                     group = location.all, ellipse = TRUE, 
                     circle = TRUE, varname.size=3)+
   scale_colour_manual(values=c("darkred", "darkblue")) +
-  annotate ("text", x=-4.5, y=3, label="B) PCA-soils", fotnface=
+  annotate ("text", x=-3.8, y=3, label="B) PCA-E&S", fotnface=
               "bold", size=8, color="black")+
   #geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
   geom_point(aes(color=location.all, size = point.size)) + scale_size_identity()
@@ -693,7 +693,7 @@ CoverEnv<-ggplot(DATA, aes(x = cover, y = PCA1.all, col=location, fill=location)
   geom_point(shape=16, size = 3) +
   ylab("Axis 1 score") +
   xlab("Canopy cover (%)")+
-  ggtitle("B) PCA-soils")+
+  ggtitle("B) PCA-E&S")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
 CoverEnv<-CoverEnv + scale_colour_manual(values=c("darkred", "darkblue"))  #I chose my own colors for the lines
@@ -789,7 +789,7 @@ CoverEnvAll<-ggplot(DATA2, aes(x = perc.cover, y = PCA1.nosoil, col=location, fi
   geom_point(shape=16, size = 3) +
   ylab("Axis 1 score") +
   xlab("Canopy cover (%)")+
-  ggtitle("A) PCA-all")+
+  ggtitle("A) PCA-E")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
 CoverEnvAll<-CoverEnvAll + scale_colour_manual(values=c("darkred", "orangered2","darkblue"))  #I chose my own colors for the lines
