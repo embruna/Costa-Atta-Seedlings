@@ -16,6 +16,10 @@ library(broom)
 #Clear out everything from the environment
 
 
+#########
+####  Need to use http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/ to organize multiple panels on one figure###
+
+
 rm(list=ls())
 
 ######################################################
@@ -466,7 +470,7 @@ nest.nosoil<-site.cats.nosoil$nest
 point.size<-cover.nosoils*0.1
 g_NOsoils <- ggbiplot(nest.env.pca.nosoil, obs.scale = 1, var.scale = 1, 
                       group = location.nosoil, ellipse = TRUE, 
-                      circle = TRUE, varname.size=3)+
+                      circle = TRUE, varname.size=6, varname.adjust=1)+
   scale_colour_manual(values=c("darkred","orangered2", "darkblue")) +
   annotate ("text", x=-3.5, y=3, label="A) PCA-E", fotnface=
               "bold", size=8, color="black")+
@@ -508,7 +512,7 @@ nest.all<-site.cats.all$nest
 point.size<-cover.ALL*0.1
 g_soils <- ggbiplot(nest.env.pca.all, obs.scale = 1, var.scale = 1, 
                     group = location.all, ellipse = TRUE, 
-                    circle = TRUE, varname.size=3)+
+                    circle = TRUE, varname.size=6, varname.adjust=1)+
   scale_colour_manual(values=c("darkred", "darkblue")) +
   annotate ("text", x=-3.8, y=3, label="B) PCA-E&S", fotnface=
               "bold", size=8, color="black")+
