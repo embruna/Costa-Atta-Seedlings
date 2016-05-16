@@ -13,13 +13,9 @@ library(lme4)
 library(MuMIn)
 library(arm)
 library(broom)
+
+
 #Clear out everything from the environment
-
-
-#########
-####  Need to use http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/ to organize multiple panels on one figure###
-
-
 rm(list=ls())
 
 ######################################################
@@ -27,6 +23,7 @@ rm(list=ls())
 ### DATA ENTRY AND CLEANUP
 ######################################################
 ######################################################
+
 #Step 1: load the individual CSV files and save them as dataframes
 setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Data/Capitulo2") 
 NEST.DATA<-read.csv("ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
@@ -37,24 +34,23 @@ NEST.DATA$location=factor(NEST.DATA$location, levels=c("nest","adjacent", "far")
 # Make Nest ID a factor
 NEST.DATA$nest<-as.factor(NEST.DATA$nest)
 
-head(NEST.DATA, 3)
-str(NEST.DATA)
-# Make Nest ID a factor
+# To double check ok toggle on
+# head(NEST.DATA, 3)
+# str(NEST.DATA)
 
-
+# SELECT WHICH VEGETATION TYPE YOU WANT TO WORK WITH
 # #Select only Cerrado Denso and Cerrado Ralo
 NEST.DATA.both<-filter(NEST.DATA, habitat =="CD" | habitat == "CR")
 NEST.DATA.both<-droplevels(NEST.DATA.both)
 str(NEST.DATA.both)
 
-# #Select only Cerrado Denso 
-# NEST.DATA.CD<-filter(NEST.DATA, habitat =="CD")
-# #Select only Cerrado Ralo
-# NEST.DATA.CR<-filter(NEST.DATA, habitat == "CR")
-# 
-# Which of the habitats are you going to analyze? CD, CR, or both?
-NEST.DATA.PCA.ALL<-NEST.DATA.both #NEST.DATA.CD NEST.DATA.both NEST.DATA.CR 
-# 
+# NEST.DATA.CD<-filter(NEST.DATA, habitat =="CD")  # Select only Cerrado Denso 
+# NEST.DATA.CR<-filter(NEST.DATA, habitat == "CR") # Select only Cerrado Ralo
+#
+# Which of the habitats are you going to analyze: CD, CR, or both?
+NEST.DATA.PCA.ALL<-NEST.DATA.both
+# NEST.DATA.PCA.ALL<-NEST.DATA.CD
+# NEST.DATA.PCA.ALL<-NEST.DATA.CR
 
 ######################################################
 ######################################################
@@ -86,11 +82,6 @@ perc.cover.fig
   
 
 
-
-#################
-
-
-
 ######################################################
 ######################################################
 ### Does Canopy Cover vary with Proimity to ant nests?  ie, do ants alter the canopy cover gradient?
@@ -115,17 +106,13 @@ qqline(coverxhab$logit.cover)
 bartlett.test(coverxhab$logit.cover ~ coverxhab$location)# Bartlett test of homogeneity of variances
 shapiro.test(resid(aov(coverxhab$logit.cover ~ coverxhab$location))) # Shapiro-Wilk normality test
 
-
-ggplot(coverxhab, aes(x=location, y=logit.cover, group = nest)) +
-  geom_point(shape=1) +    # Use hollow circles
-  geom_smooth(method=lm)  
-
 # IN ANCOVA where f is a factor and x is a covariate
 # Y ~ f * x  = different intercepts and slopes
 # Y ~ f + x  = specifies parallel slopes
 # Y ~ f    = specifies zero slopes but different intercepts
 # Y ~ x    = specifies single line
 
+# GLMM
 options(na.action = "na.fail") #for calcl of QAIC see page 42: https://cran.r-project.org/web/packages/MuMIn/MuMIn.pdf
 # only random effect
 cover1<-lmer((logit.cover) ~ (1|nest), data = coverxhab, REML = TRUE)
@@ -146,7 +133,6 @@ summary(cover5)
 #plot deviance residuals against fitted values
 plot(cover5)
 
-
 AIC(cover1,cover2, cover3, cover4, cover5)
 anova(cover2, cover1, test = "Chisq")
 anova(cover3, cover1, test = "Chisq")
@@ -161,12 +147,11 @@ anova(cover5)
 dredge(cover5, rank = "QAIC", chat = chat)
 dredge(cover5, rank = "AIC")
 
-# Need to generate table of:
-# random effect of nest identity (1)
+# Need to generate table of: # random effect of nest identity (1)
 # plot proximity to ant nests, nest area, and nest identity (4)
 # main effects of nest area and plot location, their interaction, and nest identity (5)
 # see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
-# Summary table is of 
+
 summary.table.cover <- do.call(rbind, lapply(list(cover1, cover4, cover5), broom::glance))
 summary.table.cover[["model"]] <- 1:3
 table.cols <- c("model", "df.residual", "deviance", "AIC")
@@ -182,7 +167,7 @@ write.csv(reported.table, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/C
 
 
 
-# Graph of canopy cover for each plot by nest
+# Graph of canopy cover for each plot by nest (FIG. 1B)
 CanopyCoverFig<-ggplot(data=coverxhab, aes(x=location, y=perc.cover, group=nest)) +
     geom_line(size=0.5) + geom_point(size=4, aes(colour=location))+ylab("Canopy Cover (%)")+xlab("Plot Location")+ 
     scale_y_continuous(limit=c(0, 100))+
@@ -291,7 +276,7 @@ cor.test(pc,Mg)
 cor.test(pc,Al)
 cor.test(pc,OM)
 cor.test(pc,P)
-# Not infdividually
+# Not individually
 
 
 cor.test(lb,ph)
@@ -383,8 +368,6 @@ NEST.DATA.PCA.NOSOILS$nest.area<-NULL
 # env.vars <- log(NEST.DATA.PCA[, 5:18]+1)
 # no transformation as per HLV
 
-# PAY ATTENTION - FIX THIS DEPENDING ON IF PCA ALL OR PCA "NO SOILS"
-
 # #FOR PCA ALL (WITH SOILS)
 env.vars.all <- NEST.DATA.PCA.ALL[,5:dim(NEST.DATA.PCA.ALL)[2]] #did it with dim because so that you don't have to adjust this if you decide to include canopy cover in the PCA
 site.cats.all <- NEST.DATA.PCA.ALL[, 1:4]
@@ -452,15 +435,9 @@ plot(nest.env.pca.all, type = "l")
 summary(nest.env.pca.all)
 
 
-######################################################
-######################################################
-### FIGURES
-######################################################
-######################################################
-
-#################################
-###   PCA FIG - ALL PLOTS (NO SOILS)
-#################################
+##############################################
+###   PCA FIG - ALL PLOTS (NO SOILS) - FIG 2A
+##############################################
 
 location.nosoil<-site.cats.nosoil$location
 cover.nosoil<-env.vars.nosoil$perc.cover
@@ -494,9 +471,9 @@ g_NOsoils <-g_NOsoils + theme_classic()+theme(legend.direction = 'horizontal',
 print(g_NOsoils)
 
 
-#################################
-###   PCA FIG - ONLY PLOTS ON AND FAR (WITH SOILS CHEM)    ##
-#################################
+#####################################################################
+###   PCA FIG - ONLY PLOTS ON AND FAR (WITH SOILS CHEM) - FIG 2B
+####################################################################
 
 # The Figure below is a biplot generated by the function ggbiplot of the ggbiplot package available on https://github.com/vqv/ggbiplot
 # TO install: 
@@ -537,7 +514,7 @@ print(g_soils)
 
 ######################################################
 ######################################################
-### ANALYSES with PCA scores, SEEDLINGS, ETC
+### ANALYSES OF SEEDLING # AND DIV VS PCA SCORES
 ######################################################
 ######################################################
 
@@ -650,7 +627,6 @@ sdlgs<-left_join(sdlgs, sdlgs.perc.cover, by = "plot.id")
 sdlgs<-na.omit(sdlgs)
 
 
-
 dim(sdlgs)
 dim(GLM.DATA.all)
 dim(GLM.DATA.nosoil)
@@ -691,8 +667,10 @@ cor.test(DATA$cover,DATA$PCA1.all)
 cor.test(DATA$cover,DATA$PCA2.all)
 
 
+##############################################
+# Plot: PCA-with-soils vs. canopy cover FIG 3B
+##############################################
 
-# Plot: PCA-with-soils vs. canopy cover
 CoverEnv<-ggplot(DATA, aes(x = cover, y = PCA1.all, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("Axis 1 score") +
@@ -788,7 +766,11 @@ DATA2<-droplevels(na.omit(sdlgs.nosoil))
 cor.test(DATA2$perc.cover,DATA2$PCA1.nosoil)
 cor.test(DATA2$perc.cover,DATA2$PCA2.nosoil)
 
-# Figure
+
+##############################################
+# Figure: PCA-NO-soils DATA vs. canopy cover FIG 3B
+##############################################
+
 CoverEnvAll<-ggplot(DATA2, aes(x = perc.cover, y = PCA1.nosoil, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("Axis 1 score") +
@@ -811,6 +793,10 @@ CoverEnvAll<- CoverEnvAll + theme_classic()+
         legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
         plot.margin =unit(c(0,1,1,1.5), "cm")) #+  #plot margin - top, right, bottom, left
 CoverEnvAll
+
+#############################
+# ANALYSES
+#############################
 
 RESPONSE<-DATA2$PCA2.nosoil
 COVARIATE<-DATA2$perc.cover
@@ -889,12 +875,11 @@ COVARIATE<-DATA$PCA1.all
 COVARIATE2<-DATA$cover
 COVARIATE3<-DATA$nest.area
 
-# # # OR
-#  COVARIATE<-DATA$PCA2.all
-# 
-# # If you want to include all the plots - on, adjacent, and far from nests - then you are using sdlgs.nosoil because
-# # # this dataset does NOT have soils chem data
+#  OR
+#  If you want to include all the plots - on, adjacent, and far from nests - then you are using sdlgs.nosoil because
+#  this dataset does NOT have soils chem data
 
+# COVARIATE<-DATA$PCA2.all
 # DATA<-droplevels(na.omit(sdlgs.nosoil))
 # COVARIATE<-DATA$PCA1.nosoil
 # COVARIATE2<-DATA$perc.cover
@@ -1018,15 +1003,10 @@ write.csv(reported.table.global, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS
 
 
 
-#############################
-#############################
-## 
-## PLOTS OF SEEDLING ABUNDNACE VS canopy cover 
-##
-#############################
-#############################
+##########################################################
+# PLOT OF SEEDLING ABUNDNACE VS canopy cover FIG 4A
+##########################################################
 
-# SEEDLING ABUNDANCE
 canopy.sdlgs.fig1<-ggplot(sdlgs.nosoil, aes(x = perc.cover, y = sdlg.no, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("seedling abundance") +
@@ -1051,7 +1031,10 @@ canopy.sdlgs.fig1<- canopy.sdlgs.fig1 + theme_classic()+
 canopy.sdlgs.fig1
 
 
-# SPECIES RICHNESS
+##########################################################
+# PLOT OF SEEDLING RICHNESS VS canopy cover FIG 4B
+##########################################################
+
 canopy.sdlgs.fig2<-ggplot(sdlgs.nosoil, aes(x = perc.cover, y = spp.no, col=location, fill=location)) + 
   geom_point(shape=16, size = 3) +
   ylab("Species richenss") +
@@ -1077,13 +1060,9 @@ canopy.sdlgs.fig2
 
 
 
-#############################
-#############################
-## 
+##########################################################
 ## SUMMARY DATA
-##
-#############################
-#############################
+##########################################################
 
 # This will calculate means of each column ignoring the NAs in each.
 SUMM <- NEST.DATA.PCA.ALL %>%
@@ -1112,8 +1091,13 @@ sum(sdlgs.nosoil$sdlg.no)
 common.spp<-as.data.frame(count(VEG_both, species))
 common.spp<-common.spp[order(-common.spp$n),] #- to make it descending order
 
-##FGigures of individual variables measured 
-# with dataset = NEST.DATA.PCA.NOSOILS
+
+##########################################################
+# PLOTS OF INDIVIDUAL VARIABLES VS canopy cover APPENDIX D
+# USES AS dataset = NEST.DATA.PCA.NOSOILS
+# NEED TO FIRST TOGGLE OFF LINE 362 ABOVE (NEST.DATA.PCA.ALL$perc.cover<-NULL)
+##########################################################
+
 # grass.bmass
 # litter.bmass
 # soil.pen
@@ -1143,120 +1127,10 @@ var.fig<- var.fig + theme_classic()+
 var.fig
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# compare with the following: 
-g1<-glmer(RESPONSE ~ FIXED + (1|nest), data = DATA,family=poisson, na.action = "na.fail")
-summary(g1)
-g2<-glmer(RESPONSE ~ COVARIATE  + (1|nest), data = DATA,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(g2)
-g3<-glmer(RESPONSE ~ (1|nest), data = DATA,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(g3)
-AIC(global.model.2, global.model, g1, g2, g3)
-
-# Analysis: 
-hist(DATA$perc.cover)
-#http://www.stat.columbia.edu/~martin/W2024/R11.pdf
-DATA$prop.cover<-DATA$perc.cover/100
-canopy.model1<-glm(prop.cover ~ location + nest, data = DATA ,family=quasibinomial)
-canopy.model2<-glm(prop.cover ~ nest, data = DATA ,family=quasibinomial)
-canopy.model.intercept<-glm(prop.cover ~ 1, data = DATA ,family=quasibinomial)
-summary(canopy.model1)
-summary(canopy.model2)
-summary(canopy.model.intercept)
-anova(canopy.model2,canopy.model1, test="Chisq") #effect of location no benefit of including location
-anova(canopy.model.intercept,canopy.model2, test="Chisq") #including nest significantly improves over model with just intercept
-
-
-
-
-# 
-#################
-## PLOTS of PCA scores v Canopy COver, etc.
-#################
-
-PCAfigData<-gather(GLM.DATA, "Axis", "PCA.Score", 4:5)
-
-# my_grob_ENV1 = grobTree(textGrob("A", x=0.05,  y=.95, gp=gpar(col="black", fontsize=18, fontface="bold")))
-
-
-PCAfig<-ggplot(PCAfigData, aes(x=cover, y=PCA.Score, col=location, fill=location)) + 
-  geom_point(shape=16, size=3)+
-  #   facet_grid(variable ~ .)+
-  facet_wrap(~Axis,nrow = 2,scales = "free")+
-  ylab("PCA Score") +  
-  xlab("Canopy cover (%)")+
-  geom_smooth(method=lm,se=FALSE)   # Add linear regression lines, Don't add shaded confidence region
-# +annotation_custom(my_grob_ENV1)
-PCAfig<-PCAfig + scale_colour_manual(values=c("blue", "red"))  #I chose my own colors for the lines
-PCAfig<-PCAfig + scale_y_continuous(breaks = seq(-4, 4, 1), limits = c(-4.5, 4.5))
-PCAfig<-PCAfig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(0, 100))
-# 
-
-
-PCAfig<- PCAfig + theme_classic()+
-  theme(plot.title = element_text(face="bold", size=18, vjust=-3.5, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 18, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
-        panel.margin = unit(2, "lines"), #space between facets
-        axis.line = element_line(colour = "black"), #sets colors of axes
-        legend.title = element_blank(),   #Removes the Legend title
-        legend.text = element_text(color="black", size=16),
-        legend.position = c(0.9,0.95),
-        strip.text.x = element_text(size=18, colour="black", face="bold", vjust=-1.4, hjust=.05),
-        strip.background = element_blank(),
-        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'), #box around legend
-        plot.margin =unit(c(0,1,2,1.5), "cm")) +  #plot margin - top, right, bottom, left
-  guides(colour=guide_legend(override.aes=list(size=4, linetype=0)))  #size of legen bars    
-
-PCAfig
-
-# 
-# PAIRED LINES so you ccan compare cover or PCA scores for each nest
-
-
-arrange(PCAfigData, nest) #sort them by nest so that ggplot can make the plot correctly
-filter(PCAfigData, Axis == "PCA1") #select which of the PCA scores you will be mapping, if any
-
-# y=PCA.Score
-# y=cover
-
-ggplot(data=PCAfigData, aes(x=location, y=PCA.Score, group=nest)) +
-  geom_line() +
-  geom_point()
-
-# 
-# 
-# 
-# # for quesiton on dot colors posted on stack overflow
-# # http://stackoverflow.com/questions/30968563/ggbiplot-how-to-maintain-group-colors-after-changing-point-size
+# NOTES
+#
+# for quesiton on dot colors posted on stack overflow
+# http://stackoverflow.com/questions/30968563/ggbiplot-how-to-maintain-group-colors-after-changing-point-size
 # 
 # env.vars<-data.frame(replicate(5,sample(0:10,20,rep=TRUE)))
 # cover<-c(89, 92, 72, 53, 88, 89, 71, 83, 71, 66, 23, 30,  5, 15, 57, 54,0, 23, 9, 16)
