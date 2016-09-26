@@ -80,9 +80,9 @@ perc.cover.fig<- perc.cover.fig + theme_classic()+theme(plot.title = element_tex
                                                         legend.text = element_text(face="italic", color="black", size=16),
                                                         legend.position = "none",                                            
                                                         legend.key = element_rect(colour = "black")) #puts black line around legend box
-                                                      
+
 perc.cover.fig                                                       
-  
+
 
 
 ######################################################
@@ -172,12 +172,12 @@ write.csv(reported.table, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/C
 
 # Graph of canopy cover for each plot by nest (FIG. 1B)
 CanopyCoverFig<-ggplot(data=coverxhab, aes(x=location, y=perc.cover, group=nest)) +
-    geom_line(size=0.5) + geom_point(size=4, aes(colour=location, shape=location))+
-    ylab("Canopy Cover (%)")+
-    xlab("Plot Location")+ 
-    scale_y_continuous(limit=c(0, 100))+
-    scale_colour_manual(values=c("#0072B2","#000066","#666666"))+
-    annotate ("text", x=0.7, y=95, label="B", fontface="bold", size=8, color="black")
+  geom_line(size=0.5) + geom_point(size=4, aes(colour=location, shape=location))+
+  ylab("Canopy Cover (%)")+
+  xlab("Plot Location")+ 
+  scale_y_continuous(limit=c(0, 100))+
+  scale_colour_manual(values=c("#0072B2","#000066","#666666"))+
+  annotate ("text", x=0.7, y=95, label="B", fontface="bold", size=8, color="black")
 
 CanopyCoverFig<-CanopyCoverFig + theme_classic() + theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
                                                          axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
@@ -317,7 +317,7 @@ cor.test(sh,Ca)
 cor.test(sh,Mg)
 cor.test(sh,Al)
 cor.test(sh,OM)
- 
+
 # ####THE RESULTS ABOVE SUGGEST ALL THE CORRELATIONS BETWEEN ENVT'L VARIABLES AND LIGHT WITH THE BIOLOGICAL ONES.  DO TWO PCAS
 # 1) ONE OF ALL VARIABLES - SOIL, OVER, BIOMASS+: THIS WILL HAVE A SMALLER NUMBER OF NESTS BECAUSE SOILS DATA FOR FEWER
 # 2) ONE OF COVER AND BMASS+ BUT NO SOILS (LARGER NUMBER OF NESTS)
@@ -466,8 +466,8 @@ g_NOsoils <- ggbiplot(nest.env.pca.nosoil, obs.scale = 1, var.scale = 1,
   scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
   scale_colour_manual(values=c("#0072B2","#000066","#666666"), guide=FALSE)+
   annotate ("text", x=-3.5, y=3, label="A) PCA-E", fontface="bold", size=8, color="black")
-  #geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
- 
+#geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
+
 g_NOsoils<-g_NOsoils + scale_x_continuous(breaks = seq(-4, 4, 2), limits = c(-4,4)) # I adjusted Y axis so that I could read the larger labels on arrows
 g_NOsoils<-g_NOsoils + scale_y_continuous(breaks = seq(-4, 4, 2), limits = c(-4,4)) # I adjusted Y axis so that I could read the larger labels on arrows
 
