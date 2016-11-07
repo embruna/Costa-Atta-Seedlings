@@ -5,8 +5,9 @@
 # #PCA of environmental data in R
 
 # Used http://www.r-bloggers.com/computing-and-visualizing-pca-in-r/ as a guide
-library(devtools)
+#library(devtools)
 #install_github("ggbiplot", "vqv")
+install_github("ggbiplot", "embruna") #I forked the original ggbiplot and edited it to change the arrow colors
 library(ggbiplot)
 library(tidyverse) #Data Manipulations +
 #library(grid) #NO LONGER ON CRAN!
@@ -16,6 +17,15 @@ library(lme4)#Fit linear and generalized linear mixed-effects models.
 library(MuMIn) #Model selection and model averaging based on information criteria (AICc and alike).
 library(arm) #R functions for processing 'lm', 'glm', 'svy.glm', 'merMod' and 'polr' outputs.
 library(broom)
+
+
+# library(broom) #ONLY NEEDED UNTIL CAN MAKE CHANGE TO R CODE IN GGBIPLOT
+# http://stackoverflow.com/questions/3384598/how-to-edit-and-debug-r-library-sources
+# trace("ggbiplot",edit=TRUE)
+
+
+
+
 
 
 #Clear out everything from the environment
@@ -61,14 +71,15 @@ NEST.DATA.PCA.ALL<-NEST.DATA.both
 ######################################################
 ######################################################
 
+
 perc.cover.fig<-ggplot(NEST.DATA.PCA.ALL, aes(x=perc.cover, fill=habitat)) +
   geom_histogram(binwidth=5, alpha=.7, position="identity", colour="black")+
-  scale_fill_grey(start=0.5, end=1, labels = c("Cerrado ralo","Cerrado denso"))+
+  scale_fill_grey(start=0.5, end=1, labels = c("Cerrado denso","Cerrado ralo"))+
   ylab("No. of plots") + 
-  xlab("Canopy Cover (%)")+
-  annotate ("text", x=1.5, y=8, label="A", fontface="bold", size=8, color="black")+
+  xlab("Canopy cover (%)")+
+  annotate ("text", x=1.5, y=12, label="A", fontface="bold", size=8, color="black")+
   guides(fill = guide_legend(nrow=2,byrow=TRUE, override.aes = list(colour = NULL))) #remove slash from legend
-
+perc.cover.fig<-perc.cover.fig + scale_y_continuous(breaks = seq(0, 16, 2))
 perc.cover.fig<- perc.cover.fig + theme_classic()+theme(plot.title = element_text(face="bold", size=20),        #Sets title size, style, location
                                                         legend.position=c(0.5,0.95),
                                                         axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
@@ -108,7 +119,7 @@ qqnorm(coverxhab$logit.cover)
 qqline(coverxhab$logit.cover)
 
 bartlett.test(coverxhab$logit.cover ~ coverxhab$location)# Bartlett test of homogeneity of variances
-shapiro.test(resid(aov(coverxhab$logit.cover ~ coverxhab$location))) # Shapiro-Wilk normality test
+shapiro.test(resid(aov(coverxhab$logit.cover ~ coverxhab$location))) # Shapiro-Wilk normality test  # NOT normally distributed (but we knew that) 
 
 # IN ANCOVA where f is a factor and x is a covariate
 # Y ~ f * x  = different intercepts and slopes
@@ -116,7 +127,7 @@ shapiro.test(resid(aov(coverxhab$logit.cover ~ coverxhab$location))) # Shapiro-W
 # Y ~ f    = specifies zero slopes but different intercepts
 # Y ~ x    = specifies single line
 
-# GLMM
+# GLMM w/ CANOPY COVER AS FIXED
 options(na.action = "na.fail") #for calcl of QAIC see page 42: https://cran.r-project.org/web/packages/MuMIn/MuMIn.pdf
 # only random effect
 cover1<-lmer((logit.cover) ~ (1|nest), data = coverxhab, REML = TRUE)
@@ -170,14 +181,13 @@ write.csv(reported.table, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/C
 #on the canopy cover over plots (logit-transformed proportions).
 
 
-
 # Graph of canopy cover for each plot by nest (FIG. 1B)
 CanopyCoverFig<-ggplot(data=coverxhab, aes(x=location, y=perc.cover, group=nest)) +
     geom_line(size=0.5) + geom_point(size=4, aes(colour=location, shape=location))+
-    ylab("Canopy Cover (%)")+
-    xlab("Plot Location")+ 
+    ylab("Canopy cover (%)")+
+    xlab("Plot location")+ 
     scale_y_continuous(limit=c(0, 100))+
-    scale_colour_manual(values=c("#0072B2","#000066","#666666"))+
+    scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
     annotate ("text", x=0.7, y=95, label="B", fontface="bold", size=8, color="black")
 
 CanopyCoverFig<-CanopyCoverFig + theme_classic() + theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
@@ -185,10 +195,10 @@ CanopyCoverFig<-CanopyCoverFig + theme_classic() + theme(panel.border = element_
                                                          axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
                                                          panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), #sets colors of axes
                                                          plot.title = element_text(hjust=0.05, vjust=-1.8, face="bold", size=22),        #Sets title size, style, location
-                                                         axis.title.x=element_text(colour="black", size = 18, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                                         axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                                         axis.title.x=element_text(colour="black", size = 20, vjust=-2),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                                         axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
                                                          legend.position = "none",
-                                                         axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+                                                         axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
                                                          plot.margin = unit(c(1,3,2,1), "cm"))
 CanopyCoverFig
 
@@ -367,6 +377,7 @@ nest.area.ALL<-NEST.DATA.PCA.ALL$nest.area
 
 NEST.DATA.PCA.ALL$perc.cover<-NULL
 NEST.DATA.PCA.NOSOILS$perc.cover<-NULL
+
 NEST.DATA.PCA.ALL$nest.area<-NULL
 NEST.DATA.PCA.NOSOILS$nest.area<-NULL
 
@@ -441,6 +452,41 @@ plot(nest.env.pca.all, type = "l")
 summary(nest.env.pca.all)
 
 
+# BOOTSTRAP TO SEE IF SAMPLERATIO OF SAMPLES TO VARIABLES A PROBLEM
+bootvector<-NULL 
+noisevector<-NULL #this is to record how many times you had to add "noise" to the Mg column
+for (i in 1:10000) {
+# bootstrap sample the data
+boot_data<-sample_frac(env.vars.all,1,replace=TRUE)
+# the values for Mg are almost all 0.1. If your bootstrap sample has all 0.1 in the Mg column, then it can't do the PCA. Get around this by adding a little noise.
+if (mean(boot_data$Mg)==0.1){
+    boot_data$Mg<-boot_data$Mg+runif(20, min=0.00001, max=0.00009)
+    noisevector[i]<-1
+}
+# load your function to calclulate the PCA for your bootstrapped dataset 
+# and return the variance expakined by the 1st principal component
+getPrcVar <- function (df){
+  prcs <- prcomp(df,center = TRUE, scale. = TRUE) # returns matrix
+  #return(prcs$importance[2,1]) # pick out the thing we need
+  return(summary(prcs)) # pick out the thing we need
+}
+# record the var explained by the 1st PCA
+bootvector[i]<-getPrcVar(boot_data)$importance[2,1]
+ next
+}
+# bootvector
+# hist(bootvector)
+#proportion of the bootsrapped samples with #var of 1st PCA LOWER than the actual value. 
+# sum(bootvector<summary(nest.env.pca.nosoil)$importance[2,1])/i
+
+cat("actual prop of variance explained by 1st PCA: ", (summary(nest.env.pca.nosoil)$importance[2,1]))
+cat("mean of the variance explained by 1st PCA in bootstrapped runs: ",mean(bootvector))
+cat("sd of variance explained by 1st PC in bootstrapped runs: ",sd(bootvector))
+cat("proportion of the bootstrapped 'variance of 1st PCA' < 'actual var explained by 1st PCA': ", sum(bootvector<summary(nest.env.pca.nosoil)$importance[2,1])/i)
+# summary(noisevector)
+# summary(nest.env.pca.nosoil)$importance[2,1]
+
+
 ##############################################
 ###   PCA FIG - ALL PLOTS (NO SOILS) - FIG 2A        ##NEED TO FIX SIZES SO HAVE A GREATER RANGE (point size line)
 ##############################################
@@ -459,16 +505,18 @@ nest.env.pca.nosoil$rotation
 dimnames(nest.env.pca.nosoil$rotation)
 dimnames(nest.env.pca.nosoil$rotation)[[1]]<-c("litter", "soil penet.", "grass", "soil moisture")
 
-point.size<-cover.nosoils*.1
+point.size<-cover.nosoils*6
+
 g_NOsoils <- ggbiplot(nest.env.pca.nosoil, obs.scale = 1, var.scale = 1, 
                       group = location.nosoil, ellipse = TRUE, 
                       circle = FALSE, varname.size=6, varname.adjust=1.2)+
   geom_point(aes(color=location.nosoil, size = point.size, shape=location.nosoil))+ 
-  scale_shape_manual(values=c(15,16,17), guide=FALSE)+  # Use a square circle and triangle
-  scale_colour_manual(values=c("#0072B2","#000066","#666666"), guide=FALSE)+
-  annotate ("text", x=-3.5, y=3, label="A) PCA-E", fontface="bold", size=8, color="black")
+  scale_shape_manual(values=c(16,17,15), guide=FALSE)+  # Use a square circle and triangle
+  scale_colour_manual(values=c("#000066","#0072B2","#666666"), guide=FALSE)+
+  annotate ("text", x=-3, y=3.5, label="A) PCA-subset", fontface="bold", size=8, color="black")
   #geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
  
+
 g_NOsoils<-g_NOsoils + scale_x_continuous(breaks = seq(-4, 4, 2), limits = c(-4,4)) # I adjusted Y axis so that I could read the larger labels on arrows
 g_NOsoils<-g_NOsoils + scale_y_continuous(breaks = seq(-4, 4, 2), limits = c(-4,4)) # I adjusted Y axis so that I could read the larger labels on arrows
 
@@ -476,14 +524,14 @@ g_NOsoils <-g_NOsoils + theme_classic()+theme(legend.direction = 'vertical',
                                               legend.position = 'right',
                                               axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
                                               axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
-                                              axis.title.x=element_text(colour="black", size = 18, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                              axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                              axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
+                                              axis.title.x=element_text(colour="black", size = 20, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                              axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                              axis.text=element_text(colour="black", size = 18),                             #sets size and style of labels on axes
                                               legend.title = element_blank(), #remove title of legend
-                                              legend.text = element_text(color="black", size=22, vjust =2),
+                                              legend.text = element_text(color="black", size=16, vjust =2),
                                               plot.margin =unit(c(1,1,1,1.5), "lines"))   #plot margin - top, right, bottom, left
 
-g_NOsoils <-g_NOsoils +guides(shape=guide_legend(override.aes=list(size=6, linetype=0, color=c("#0072B2","#000066","#666666")))) #size of legen bars    
+g_NOsoils <-g_NOsoils +guides(shape=guide_legend(override.aes=list(size=6, linetype=0, color=c("#000066","#0072B2","#666666")))) #size of legen bars    
 g_NOsoils <-g_NOsoils + guides(size="none", colour="none")
 print(g_NOsoils)
 
@@ -513,33 +561,33 @@ dimnames(nest.env.pca.all$rotation)[[1]]<-c("litter", "soil penet.", "grass",
                                             "pH", "P", "K", "Ca","Mg","Al","org mat","soil moisture")
 
 
-point.size<-cover.ALL*0.1
+point.size<-cover.ALL*6
 g_soils <- ggbiplot(nest.env.pca.all, obs.scale = 1, var.scale = 1, 
                     group = location.all, ellipse = TRUE, 
                     circle = FALSE, varname.size=6, varname.adjust=1.2)+
   geom_point(aes(color=location.all, size = point.size, shape=location.all)) + 
-  scale_shape_manual(values=c(15,17), guide=FALSE)+  # Use a square circle and triangle
-  scale_colour_manual(values=c("#0072B2","#666666"), guide=FALSE)+
-  annotate ("text", x=-3.8, y=3, label="B) PCA-E&S", fontface=
+  scale_shape_manual(values=c(16,15), guide=FALSE)+  # Use a square circle and triangle
+  scale_colour_manual(values=c("#000066","#666666"), guide=FALSE)+
+  annotate ("text", x=-3, y=3.5, label="B) PCA-all", fontface=
               "bold", size=8, color="black")
   #geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
   # geom_point(aes(color=location.all, size = point.size)) + scale_size_identity()
 #I chose my own colors for the lines
 g_soils<-g_soils + scale_x_continuous(breaks = seq(-4, 4, 2), limits = c(-4, 4)) # I adjusted X axis so that I could read the larger labels on arrows
-g_soils<g_soils + scale_y_continuous(breaks = seq(-4, 4, 2), limits = c(-4,4)) # I adjusted Y axis so that I could read the larger labels on arrows
+g_soils<-g_soils + scale_y_continuous(breaks = seq(-4, 4, 2), limits = c(-4,4)) # I adjusted Y axis so that I could read the larger labels on arrows
 
 g_soils <-g_soils + theme_classic()+theme(legend.direction = 'vertical', 
                                           legend.position = 'right',
                                           axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
                                           axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
-                                          axis.title.x=element_text(colour="black", size = 18, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                          axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                          axis.text=element_text(colour="black", size = 16),                             #sets size and style of labels on axes
+                                          axis.title.x=element_text(colour="black", size = 20, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                          axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                          axis.text=element_text(colour="black", size = 18),                             #sets size and style of labels on axes
                                           legend.title = element_blank(), #remove title of legend
-                                          legend.text = element_text(color="black", size=22, vjust =2),
+                                          legend.text = element_text(color="black", size=16, vjust =2),
                                           plot.margin =unit(c(1,1,1,1.5), "lines"))   #plot margin - top, right, bottom, left
 
-g_soils <-g_soils +guides(shape=guide_legend(override.aes=list(size=6, linetype=0, color=c("#0072B2","#666666")))) #size of legen bars    
+g_soils <-g_soils +guides(shape=guide_legend(override.aes=list(size=6, linetype=0, color=c("#000066","#666666")))) #size of legen bars    
 g_soils <-g_soils + guides(size="none", colour="none")
 print(g_soils)
 
@@ -705,21 +753,21 @@ cor.test(DATA$cover,DATA$PCA2.all)
 
 CoverEnv<-ggplot(DATA, aes(x = cover, y = PCA1.all, col=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
-  scale_shape_manual(values=c(15,17))+
+  scale_shape_manual(values=c(16,15))+
   ylab("Axis 1 score") +
   xlab("Canopy cover (%)")+
-  ggtitle("B) PCA-E&S")+
   guides(fill = guide_legend(override.aes = list(linetype = 0)))+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
-CoverEnv<-CoverEnv + scale_colour_manual(values=c("#0072B2", "#666666"))  #I chose my own colors for the lines
+CoverEnv<-CoverEnv + scale_colour_manual(values=c("#000066", "#666666"))  #I chose my own colors for the lines
+CoverEnv<-CoverEnv +annotate ("text", x=5, y=4, label="B) PCA-all", fontface="bold", size=8, color="black")
 #plot.sdlg.no<-plot.sdlg.no + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
 CoverEnv<-CoverEnv + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-5, 100))
 CoverEnv<-CoverEnv+scale_y_continuous(breaks = seq(-4, 4, 1), limits = c(-4, 4))
 CoverEnv<- CoverEnv + theme_classic()+
-  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 18, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+  theme(plot.title = element_text(face="bold", size=18, vjust=25, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
         axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
         axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
         axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
@@ -782,6 +830,75 @@ reported.table.pca1$AIC <- NULL
 reported.table.pca1 <- reported.table.pca1[order(reported.table.pca1$dAIC),]
 write.csv(reported.table.pca1, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/PCA2vLoc.csv", row.names = F) #export it as a csv file
 
+##################################################################################
+##################################################################################
+## GLMM with Nest  AND Canopy cover treated as random effects
+##################################################################################
+##################################################################################
+COVARIATE<-DATA$cover
+COVARIATE2<-DATA$nest.area
+RESPONSE<-DATA$PCA1.all
+FIXED<-DATA$location
+#DOES INCLUDING NEST AREA IMPROVE THE FIT OVER JUST random effect of NEST?
+pca1.covariate1<-lmer(RESPONSE ~ COVARIATE2 + (1|nest), data = DATA)
+summary(pca1.covariate1)
+pca1.nest<-lmer(RESPONSE ~  (1|nest), data = DATA)
+summary(pca1.nest)
+AIC(pca1.covariate1, pca1.nest)
+anova(pca1.covariate1,pca1.nest, test = "Chisq")
+#NO, SO DON't INCLUDE
+
+# Nest identity is a random effect RANDOM<-(1|nest)
+pca1.1<-lmer(RESPONSE ~ (1|nest), data = DATA)
+summary(pca1.1)
+pca1.2<-lmer(RESPONSE ~ FIXED + (1|nest), data = DATA)
+summary(pca1.2)
+pca1.3<-lmer(RESPONSE ~ (1|COVARIATE) + (1|nest), data = DATA)
+summary(pca1.3)
+pca1.4<-lmer(RESPONSE ~ FIXED + (1|COVARIATE) + (1|nest), data = DATA)
+summary(pca1.4)
+pca1.5<-lmer(RESPONSE ~ FIXED * (1|COVARIATE) + (1|nest), data = DATA)
+summary(pca1.5)
+
+AIC(pca1.5,pca1.4,pca1.3,pca1.2, pca1.1)
+anova(pca1.5,pca1.4,pca1.3,pca1.2, pca1.1, test = "Chisq")
+
+
+#Need table for models with
+#random effect of nest ID only (1)
+# effect of plot location + radnom
+# effect of canopy cover + radnom
+# effect of plot, canopy, random, but no interaction
+# but no interaction with canopy cover covariate 
+# see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
+summary.table.pca1 <- do.call(rbind, lapply(list(pca1.1, pca1.2,pca1.3, pca1.4, pca1.5), broom::glance))
+summary.table.pca1[["model"]] <- 1:5
+table.cols <- c("model", "df.residual", "deviance", "AIC")
+reported.table.pca1 <- summary.table.pca1[table.cols]
+names(reported.table.pca1) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
+reported.table.pca1[['dAIC']] <-  with(reported.table.pca1, AIC - min(AIC))
+reported.table.pca1[['wAIC']] <- with(reported.table.pca1, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table.pca1$AIC <- NULL
+reported.table.pca1 <- reported.table.pca1[order(reported.table.pca1$dAIC),]
+write.csv(reported.table.pca1, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/PCA2vLoc.csv", row.names = F) #export it as a csv file
+
+
+##################################################################################
+##################################################################################
+##################################################################################
+##################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -804,30 +921,29 @@ cor.test(DATA2$perc.cover,DATA2$PCA2.nosoil)
 
 
 ##############################################
-# Figure: PCA-NO-soils DATA vs. canopy cover FIG 3B
+# Figure: PCA-NO-soils DATA vs. canopy cover FIG 3A
 ##############################################
 
 
 
 CoverEnvAll<-ggplot(DATA2, aes(x = perc.cover, y = PCA1.nosoil, col=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
-  scale_shape_manual(values=c(15,16,17))+
+  scale_shape_manual(values=c(16,17,15))+
   guides(fill = guide_legend(override.aes = list(linetype = 0)))+
   ylab("Axis 1 score") +
   xlab("Canopy cover (%)")+
-  ggtitle("A) PCA-E")+
-  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
-  geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
-CoverEnvAll<-CoverEnvAll + scale_colour_manual(values=c("#0072B2","#000066","#666666"))  #I chose my own colors for the lines
+  geom_smooth(method=lm,se=FALSE) # Add linear regression lines
+  CoverEnvAll<-CoverEnvAll + annotate ("text", x=5, y=2, label="A) PCA-subset", fontface="bold", size=8, color="black")
+CoverEnvAll<-CoverEnvAll + scale_colour_manual(values=c("#000066","#0072B2","#666666"))  #I chose my own colors for the lines
 #plot.sdlg.no<-plot.sdlg.no + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
 CoverEnvAll<-CoverEnvAll + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-5, 100))
 CoverEnvAll<- CoverEnvAll + theme_classic()+
-  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 18, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+  theme(#plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
         axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
         axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
-        axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
         #legend.position = 'none',
         legend.title = element_blank(),   #Removes the Legend title
         legend.text = element_text(color="black", size=16),  
@@ -893,6 +1009,27 @@ reported.table.pca2[['wAIC']] <- with(reported.table.pca2, exp(- 0.5 * dAIC) / s
 reported.table.pca2$AIC <- NULL
 reported.table.pca2 <- reported.table.pca2[order(reported.table.pca2$dAIC),]
 write.csv(reported.table.pca2, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/PCA2vLoc.csv", row.names = F) #export it as a csv file
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1051,23 +1188,24 @@ write.csv(reported.table.global, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS
 
 canopy.sdlgs.fig1<-ggplot(sdlgs.nosoil, aes(x = perc.cover, y = sdlg.no, colour=location, shape=location, fill=location)) + 
   geom_point(size = 3) +
-  scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
-  scale_colour_manual(values=c("#0072B2","#000066","#666666"))+
+  scale_shape_manual(values=c(16,17,15))+  # Use a square circle and triangle
+  scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
   guides(fill = guide_legend(override.aes = list(linetype = 0)))+
-    ylab("seedling abundance") +
+  ylab("seedling abundance") +
   xlab("Canopy cover (%)")+
-  ggtitle("A")+
+  geom_smooth(method=lm,se=FALSE)+ 
+  annotate ("text", x=5, y=85, label="A", fontface="bold", size=8, color="black")
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
-  geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
+    # Add linear regression lines
 #plot.sdlg.no<-plot.sdlg.no + scale_y_continuous(breaks = seq(0, 1400, 200), limits = c(-10, 1400))
 canopy.sdlgs.fig1<-canopy.sdlgs.fig1 + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-5, 100))
 canopy.sdlgs.fig1<- canopy.sdlgs.fig1 + theme_classic()+
-  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 18, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+  theme(plot.title = element_text(face="bold", size=18, vjust=-15, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
         axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
         axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
-        axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
         #legend.position = 'none',
         legend.title = element_blank(),   #Removes the Legend title
         legend.text = element_text(color="black", size=16),  
@@ -1083,24 +1221,23 @@ canopy.sdlgs.fig1
 
 canopy.sdlgs.fig2<-ggplot(sdlgs.nosoil, aes(x = perc.cover, y = spp.no, colour=location, shape=location, fill=location)) + 
   geom_point(size = 3) +
-  scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
-  scale_colour_manual(values=c("#0072B2","#000066","#666666"))+
+  scale_shape_manual(values=c(16,17,15))+  # Use a square circle and triangle
+  scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
   guides(fill = guide_legend(override.aes = list(linetype = 0)))+
-    ylab("Species richness") +
+  ylab("Species richness") +
   xlab("Canopy cover (%)")+
-  ggtitle("B")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
-  geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
+  geom_smooth(method=lm,se=FALSE)+   # Add linear regression lines
+annotate ("text", x=5, y=30, label="B", fontface="bold", size=8, color="black")
 canopy.sdlgs.fig2<-canopy.sdlgs.fig2 + scale_y_continuous(breaks = seq(0, 30, 5), limits = c(-5, 30))
 canopy.sdlgs.fig2<-canopy.sdlgs.fig2 + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-5, 100))
 canopy.sdlgs.fig2<- canopy.sdlgs.fig2 + theme_classic()+
   theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 18, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
         axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
         axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
-        axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
-        #legend.position = 'none',
+        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
         legend.title = element_blank(),   #Removes the Legend title
         legend.text = element_text(color="black", size=16),  
         legend.position = c(0.9,0.8),
@@ -1115,13 +1252,13 @@ canopy.sdlgs.fig2
 ##########################################################
 
 # This will calculate means of each column ignoring the NAs in each.
-SUMM <- NEST.DATA.PCA.ALL %>%
-  group_by(location) %>%
-  summarise_each(funs(mean(., na.rm = TRUE)))
-
-SUMM <- NEST.DATA.PCA.ALL %>%
-  group_by(location) %>%
-  summarise_each(funs(sd(., na.rm = TRUE)))
+# SUMM <- NEST.DATA.PCA.ALL %>%
+#   group_by(location) %>%
+#   summarise_each(funs(mean(., na.rm = TRUE)))
+# 
+# SUMM <- NEST.DATA.PCA.ALL %>%
+#   group_by(location) %>%
+#   summarise_each(funs(sd(., na.rm = TRUE)))
 
 # This will calculate means of each column ignoring the NAs in each.
 SUMM <- NEST.DATA.PCA.ALL %>%
@@ -1135,6 +1272,7 @@ SUMM2 <- sdlgs.nosoil %>%
 SUMM3 <- sdlgs.nosoil %>%
   group_by(location) %>%
   summarise_each(funs(sd(., na.rm = TRUE)))
+
 sum(sdlgs.nosoil$sdlg.no)
 
 # This tells you the common species in our survey
@@ -1148,27 +1286,29 @@ common.spp<-common.spp[order(-common.spp$n),] #- to make it descending order
 # NEED TO FIRST TOGGLE OFF LINE 362 ABOVE (NEST.DATA.PCA.ALL$perc.cover<-NULL)
 ##########################################################
 
+#### MOVE THESE TO THE START OF THE CODE
+
 # grass.bmass
 # litter.bmass
 # soil.pen
 # soil.moisture.surface
 
-var.fig<-ggplot(NEST.DATA.PCA.NOSOILS, aes(x = perc.cover, y = soil.moisture.surface, colour=location, shape=location,fill=location)) + 
+var.fig<-ggplot(NEST.DATA.PCA.ALL, aes(x = perc.cover, y = soil.moisture.surface, colour=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
   scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
-  scale_colour_manual(values=c("#0072B2","#000066","#666666"))+
+  scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
   guides(fill = guide_legend(override.aes = list(linetype = 0)))+
-  ylab("soil moisture") +
+  ylab("Soil moisture") +
   xlab("Canopy cover (%)")+
-  ggtitle("D")+
-  geom_smooth(method=lm,se=FALSE)   # Add linear regression lines
-# var.fig<-var.fig + scale_y_continuous(breaks = seq(0, 30, 5), limits = c(-5, 30))
+  geom_smooth(method=lm,se=FALSE)+   # Add linear regression lines
+  annotate ("text", x=5, y=85, label="D", fontface="bold", size=8, color="black")
+var.fig<-var.fig + scale_y_continuous(breaks = seq(0, 8, 2), limits = c(-1, 8))
 var.fig<-var.fig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-5, 100))
 var.fig<- var.fig + theme_classic()+
   theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 18, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
         axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
         axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
         #legend.position = 'none',
@@ -1178,6 +1318,13 @@ var.fig<- var.fig + theme_classic()+
         legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
         plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
 var.fig
+
+
+foo<-group_by(NEST.DATA.PCA.ALL, nest)
+sdlgs.nosoil
+foo2<-inner_join(foo,sdlgs.nosoil, by="nest")
+str(foo2)
+
 
 
 # NOTES
