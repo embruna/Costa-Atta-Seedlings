@@ -1,41 +1,40 @@
-####################################################################
-# Code to conduct the analyses and generate the figures in Costa et al.
-####################################################################
+#=============================================================================================================#
+# Script created by Emilio M. Bruna, embruna@ufl.edu
+# Script created in R version 3.3.1
+# Code to conduct the analyses and generate the figures in Costa et al. PeerJ
 
-# #PCA of environmental data in R
+# Notes on analysis
+# For PCA of environmental data in R Used http://www.r-bloggers.com/computing-and-visualizing-pca-in-r/ as a guide
+#=============================================================================================================#
 
-# Used http://www.r-bloggers.com/computing-and-visualizing-pca-in-r/ as a guide
-#library(devtools)
-#install_github("ggbiplot", "vqv")
-install_github("ggbiplot", "embruna") #I forked the original ggbiplot and edited it to change the arrow colors
+# For PCA figures used: ggbiplot package available here: https://github.com/vqv/ggbiplot
+# To install it:
+# library(devtools)
+# library (ggbiplot)
+# install_github("ggbiplot", "vqv")
+# BUT I forked the original ggbiplot and edited it to change the arrow colors, so...
+install_github("embruna/ggbiplot") 
 library(ggbiplot)
-library(tidyverse) #Data Manipulations +
-#library(grid) #NO LONGER ON CRAN!
-library(gridExtra)#user-level functions to work with "grid" graphics (e.g., arrange multiple grid-based plots on page, draw tables).
+library(tidyverse) #Data Manipulations+ggplo1
+library(gridExtra) #user-level functions to work with "grid" graphics (e.g., arrange multiple grid-based plots on page, draw tables).
 library(reshape2)  #was still learning to use pdlyr, so used some melt and cast
-library(lme4)#Fit linear and generalized linear mixed-effects models. 
-library(MuMIn) #Model selection and model averaging based on information criteria (AICc and alike).
-library(arm) #R functions for processing 'lm', 'glm', 'svy.glm', 'merMod' and 'polr' outputs.
+library(lme4)      #Fit linear and generalized linear mixed-effects models. 
+library(MuMIn)     #Model selection and model averaging based on information criteria (AICc and alike).
+library(arm)       #R functions for processing 'lm', 'glm', 'svy.glm', 'merMod' and 'polr' outputs.
 library(broom)
 
-
+#library(grid) #NO LONGER ON CRAN!
 # library(broom) #ONLY NEEDED UNTIL CAN MAKE CHANGE TO R CODE IN GGBIPLOT
 # http://stackoverflow.com/questions/3384598/how-to-edit-and-debug-r-library-sources
 # trace("ggbiplot",edit=TRUE)
 
 
-
-
-
-
 #Clear out everything from the environment
 rm(list=ls())
 
-######################################################
-######################################################
+############################################################################################################
 ### DATA ENTRY AND CLEANUP
-######################################################
-######################################################
+############################################################################################################
 
 # #Step 1: load the individual CSV files and save them as dataframes
 NEST.DATA<-read.csv("./Data/ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
@@ -46,86 +45,77 @@ NEST.DATA$location=factor(NEST.DATA$location, levels=c("nest","adjacent", "far")
 # Make Nest ID a factor
 NEST.DATA$nest<-as.factor(NEST.DATA$nest)
 
-# To double check ok toggle on
+# To double check ok toggle
 # head(NEST.DATA, 3)
 # str(NEST.DATA)
 
 # SELECT WHICH VEGETATION TYPE YOU WANT TO WORK WITH
-# #Select only Cerrado Denso and Cerrado Ralo
-NEST.DATA.both<-filter(NEST.DATA, habitat =="CD" | habitat == "CR")
+# NEST.DATA.CD<-filter(NEST.DATA, habitat =="CD")  # Select only Cerrado Denso 
+# NEST.DATA.CR<-filter(NEST.DATA, habitat == "CR") # Select only Cerrado Ralo
+NEST.DATA.both<-filter(NEST.DATA, habitat =="CD" | habitat == "CR") # Select only Cerrado Denso and Cerrado Ralo
 NEST.DATA.both<-droplevels(NEST.DATA.both)
 str(NEST.DATA.both)
 
-# NEST.DATA.CD<-filter(NEST.DATA, habitat =="CD")  # Select only Cerrado Denso 
-# NEST.DATA.CR<-filter(NEST.DATA, habitat == "CR") # Select only Cerrado Ralo
-#
 # Which of the habitats are you going to analyze: CD, CR, or both?
-NEST.DATA.PCA.ALL<-NEST.DATA.both
 # NEST.DATA.PCA.ALL<-NEST.DATA.CD
 # NEST.DATA.PCA.ALL<-NEST.DATA.CR
-
-######################################################
-######################################################
-### Histogram of Canopu Cover Gradient
-### FIG 1A
-######################################################
-######################################################
+NEST.DATA.PCA.ALL<-NEST.DATA.both
 
 
-perc.cover.fig<-ggplot(NEST.DATA.PCA.ALL, aes(x=perc.cover, fill=habitat)) +
+############################################################################################################
+### FIG 1A: Histogram of Canopy Cover Gradient
+############################################################################################################
+
+cover.fig.gradient<-ggplot(NEST.DATA.PCA.ALL, aes(x=perc.cover, fill=habitat)) +
   geom_histogram(binwidth=5, alpha=.7, position="identity", colour="black")+
   scale_fill_grey(start=0.5, end=1, labels = c("Cerrado denso","Cerrado ralo"))+
   ylab("No. of plots") + 
   xlab("Canopy cover (%)")+
   annotate ("text", x=1.5, y=12, label="A", fontface="bold", size=8, color="black")+
   guides(fill = guide_legend(nrow=2,byrow=TRUE, override.aes = list(colour = NULL))) #remove slash from legend
-perc.cover.fig<-perc.cover.fig + scale_y_continuous(breaks = seq(0, 16, 2))
-perc.cover.fig<- perc.cover.fig + theme_classic()+theme(plot.title = element_text(face="bold", size=20),        #Sets title size, style, location
+
+cover.fig.gradient<-cover.fig.gradient + scale_y_continuous(breaks = seq(0, 16, 2))
+cover.fig.gradient<- cover.fig.gradient + theme_classic()+theme(plot.title = element_text(face="bold", size=20),                            #Sets title size, style, location
                                                         legend.position=c(0.5,0.95),
                                                         axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
                                                         axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
-                                                        axis.title.x=element_text(colour="black", size = 20, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                                        axis.title.y=element_text(colour="black", size = 20, vjust=1.5),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-                                                        axis.text=element_text(colour="black", size = 16),                              #sets size and style of labels on axes
-                                                        legend.title = element_blank(),                                  #Removes the Legend title
-                                                        #legend.key = element_blank(),                                  #Removes the boxes around legend colors
+                                                        axis.title.x=element_text(colour="black", size = 20, vjust=-0.5),           #Sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                                        axis.title.y=element_text(colour="black", size = 20, vjust=1.5),            #Sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                                        axis.text=element_text(colour="black", size = 16),                          #Sets size and style of labels on axes
+                                                        legend.title = element_blank(),                                             #Removes the Legend title
+                                                        #legend.key = element_blank(),                                              #Removes the boxes around legend colors
                                                         legend.text = element_text(face="italic", color="black", size=16),
                                                         legend.position = "none",                                            
-                                                        legend.key = element_rect(colour = "black")) #puts black line around legend box
+                                                        legend.key = element_rect(colour = "black"))                                #puts black line around legend box
                                                       
-perc.cover.fig                                                       
+cover.fig.gradient                                                       
   
 
 
-######################################################
-######################################################
-### Does Canopy Cover vary with Proimity to ant nests?  ie, do ants alter the canopy cover gradient?
-### FIG 1B
-######################################################
-######################################################
+############################################################################################################
+### Analyses: Does Canopy Cover vary with Proimity to ant nests?  
+### Figure: FIG 1B
+############################################################################################################
+
 # analyses
 str(NEST.DATA.both)
 coverxhab<-dplyr::select(NEST.DATA.both, habitat, nest, location, perc.cover, nest.area)
 coverxhab<-droplevels(na.omit(coverxhab))
 coverxhab %>% group_by(location) %>% summarise(mean.perc.cover=mean(perc.cover))
 coverxhab %>% group_by(location) %>% summarise(var.perc.cover=var(perc.cover))
+
 # Nest identity is a random effect RANDOM<-(1|nest)
 coverxhab$cover.prop<-coverxhab$perc.cover/100
 coverxhab <- coverxhab[order(coverxhab$cover.prop),] 
+
 #logit trasnform and add smallest value to correct for zero as per http://www.esajournals.org/doi/full/10.1890/10-0340.1#appB
 coverxhab$logit.cover<-log10((coverxhab$cover.prop+0.01)/(1-coverxhab$cover.prop+0.01))
 hist(coverxhab$logit.cover)
 qqnorm(coverxhab$logit.cover)
 qqline(coverxhab$logit.cover)
 
-bartlett.test(coverxhab$logit.cover ~ coverxhab$location)# Bartlett test of homogeneity of variances
+bartlett.test(coverxhab$logit.cover ~ coverxhab$location)            # Bartlett test of homogeneity of variances
 shapiro.test(resid(aov(coverxhab$logit.cover ~ coverxhab$location))) # Shapiro-Wilk normality test  # NOT normally distributed (but we knew that) 
-
-# IN ANCOVA where f is a factor and x is a covariate
-# Y ~ f * x  = different intercepts and slopes
-# Y ~ f + x  = specifies parallel slopes
-# Y ~ f    = specifies zero slopes but different intercepts
-# Y ~ x    = specifies single line
 
 # GLMM w/ CANOPY COVER AS FIXED
 options(na.action = "na.fail") #for calcl of QAIC see page 42: https://cran.r-project.org/web/packages/MuMIn/MuMIn.pdf
@@ -175,14 +165,10 @@ names(reported.table) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
 reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
 reported.table[['wAIC']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
 reported.table$AIC <- NULL
-write.csv(reported.table, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/CoverxLocTable.csv", row.names = F) #export it as a csv file
+write.csv(reported.table, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al PeerJ (Ch2)/PeerJ v2/CoverxLocTable.csv", row.names = F) #export it as a csv file
 
-#Caption: Model selection for the random effect of nest (model 1) or plot location and nest (model 2)
-#on the canopy cover over plots (logit-transformed proportions).
-
-
-# Graph of canopy cover for each plot by nest (FIG. 1B)
-CanopyCoverFig<-ggplot(data=coverxhab, aes(x=location, y=perc.cover, group=nest)) +
+# Fig 1B Canopy cover for each plot splitr by nest 
+cover.fig.location<-ggplot(data=coverxhab, aes(x=location, y=perc.cover, group=nest)) +
     geom_line(size=0.5) + geom_point(size=4, aes(colour=location, shape=location))+
     ylab("Canopy cover (%)")+
     xlab("Plot location")+ 
@@ -190,7 +176,7 @@ CanopyCoverFig<-ggplot(data=coverxhab, aes(x=location, y=perc.cover, group=nest)
     scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
     annotate ("text", x=0.7, y=95, label="B", fontface="bold", size=8, color="black")
 
-CanopyCoverFig<-CanopyCoverFig + theme_classic() + theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+cover.fig.location<-cover.fig.location + theme_classic() + theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
                                                          axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
                                                          axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
                                                          panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), #sets colors of axes
@@ -200,16 +186,12 @@ CanopyCoverFig<-CanopyCoverFig + theme_classic() + theme(panel.border = element_
                                                          legend.position = "none",
                                                          axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
                                                          plot.margin = unit(c(1,3,2,1), "cm"))
-CanopyCoverFig
+cover.fig.location
 
 
-######################################################
-######################################################
-### Correlations between variales
-######################################################
-######################################################
-
-correlations<-cor(NEST.DATA.PCA.ALL[,5:15])
+############################################################################################################
+### Correlations between environmental variables
+############################################################################################################
 
 lb<-NEST.DATA.PCA.ALL$litter.bmass
 sp<-NEST.DATA.PCA.ALL$soil.pen
@@ -217,6 +199,7 @@ gb<-NEST.DATA.PCA.ALL$grass.bmass
 sh<-NEST.DATA.PCA.ALL$soil.moisture.surface
 pc<-NEST.DATA.PCA.ALL$perc.cover
 
+# If you want to see the histograms...
 # hist(lb)
 # hist(sp)
 # hist(gb)
@@ -226,19 +209,17 @@ pc<-NEST.DATA.PCA.ALL$perc.cover
 ####CORRELATIONS BTWEN ENVT VARIABLES (NON SOIL) 
 cor.test(lb, sp, method="spearman")
 cor.test(lb,gb, method="spearman")
-cor.test(lb,sh, method="spearman")
+cor.test(lb,sh, method="spearman") #SIGNIFICANT (litter biomass & soil moisture)
 cor.test(gb,sh, method="spearman")
-# NOT STRONGLY CORRELATED WITH EACH OTHER, BUT SEE BELOW - MOST CORRELATED WITH PC
+# Not strongly correlated with each other with one exception, but see below. Most are correlated with percent cover
 
 ####CORRELATIONS btwn ENVT VARIABLES (NON SOIL) and PERCENT COVER
-cor.test(pc,lb, method="spearman")
-cor.test(pc,sp)
-cor.test(pc,gb, method="spearman")
-cor.test(pc,sh)
-# Percent cover strongly correlateds with 3 of these 4
+cor.test(pc,lb, method="spearman") #SIGNIFICANT (litter biomass & percent cover)
+cor.test(pc,sp, method="spearman")
+cor.test(pc,gb, method="spearman") #SIGNIFICANT (grass biomass & percent cover)
+cor.test(pc,sh, method="spearman") #SIGNIFICANT (soil moisture & percent cover)
 
-####CORRELATIONS BTWEN SOIL VARIABLES
-correlationSOIL<-cor(NEST.DATA.PCA.ALL[,9:15])
+####CORRELATIONS AMONG SOIL VARIABLES
 ph<-NEST.DATA.PCA.ALL$ph
 P<-NEST.DATA.PCA.ALL$P
 K<-NEST.DATA.PCA.ALL$K
@@ -247,6 +228,7 @@ Mg<-NEST.DATA.PCA.ALL$Mg
 Al<-NEST.DATA.PCA.ALL$Al
 OM<-NEST.DATA.PCA.ALL$org.mat
 
+# If you want to see the histograms...
 # hist(ph)
 # hist(P)
 # hist(K)
@@ -255,89 +237,72 @@ OM<-NEST.DATA.PCA.ALL$org.mat
 # hist(Al)
 # hist(OM)
 
-cor.test(ph,P)
+cor.test(ph,P)  #SIGNIFICANT
 cor.test(ph,K)
 cor.test(ph,Ca)
 cor.test(ph,Mg)
-cor.test(ph,Al)
-cor.test(ph,OM)
-cor.test(ph,P)
-
+cor.test(ph,Al) #SIGNIFICANT
+cor.test(ph,OM) #SIGNIFICANT
+cor.test(ph,P)  #SIGNIFICANT
 cor.test(P,K)
 cor.test(P,Ca)
 cor.test(P,Mg)
-cor.test(P,Al)
-cor.test(P,OM)
-
-cor.test(K,Ca)
-cor.test(K,Mg)
+cor.test(P,Al) #SIGNIFICANT
+cor.test(P,OM) #SIGNIFICANT
+cor.test(K,Ca) #SIGNIFICANT
+cor.test(K,Mg) #SIGNIFICANT
 cor.test(K,Al)
 cor.test(K,OM)
-
-cor.test(Ca,Mg)
+cor.test(Ca,Mg) #SIGNIFICANT
 cor.test(Ca,Al)
 cor.test(Ca,OM)
-
 cor.test(Mg,Al)
 cor.test(Mg,OM)
-
-cor.test(Al,OM)
-
-# Is canopy corfrelated with these?
+cor.test(Al,OM) #SIGNIFICANT
 cor.test(pc,ph)
 cor.test(pc,P)
 cor.test(pc,K)
-cor.test(pc,Ca)
+cor.test(pc,Ca) #SIGNIFICANT
 cor.test(pc,Mg)
 cor.test(pc,Al)
 cor.test(pc,OM)
 cor.test(pc,P)
-# Not individually
 
-
-cor.test(lb,ph)
-cor.test(lb,P)
+# Envt'l with Soil Chem
+cor.test(lb,ph) #SIGNIFICANT
+cor.test(lb,P) #SIGNIFICANT
 cor.test(lb,K)
-cor.test(lb,Ca)
+cor.test(lb,Ca) #SIGNIFICANT
 cor.test(lb,Mg)
-cor.test(lb,Al)
+cor.test(lb,Al) #SIGNIFICANT
 cor.test(lb,OM)
-
 cor.test(sp,ph)
-cor.test(sp,P)
+cor.test(sp,P) #SIGNIFICANT
 cor.test(sp,K)
 cor.test(sp,Ca)
 cor.test(sp,Mg)
-cor.test(sp,Al)
-cor.test(sp,OM)
-cor.test(sp,sh)
-
+cor.test(sp,Al) #SIGNIFICANT
+cor.test(sp,OM)  #SIGNIFICANT
+cor.test(sp,sh) #SIGNIFICANT
 cor.test(gb,ph)
 cor.test(gb,P)
 cor.test(gb,K)
 cor.test(gb,Ca)
 cor.test(gb,Mg)
 cor.test(gb,Al)
-cor.test(gb,OM)
+cor.test(gb,OM) #SIGNIFICANT
 cor.test(gb,sh)
-
-cor.test(sh,ph)
-cor.test(sh,P)
+cor.test(sh,ph) #SIGNIFICANT
+cor.test(sh,P) #SIGNIFICANT
 cor.test(sh,K)
 cor.test(sh,Ca)
 cor.test(sh,Mg)
-cor.test(sh,Al)
-cor.test(sh,OM)
+cor.test(sh,Al)  #SIGNIFICANT
+cor.test(sh,OM)  #SIGNIFICANT
  
-# ####THE RESULTS ABOVE SUGGEST ALL THE CORRELATIONS BETWEEN ENVT'L VARIABLES AND LIGHT WITH THE BIOLOGICAL ONES.  DO TWO PCAS
-# 1) ONE OF ALL VARIABLES - SOIL, OVER, BIOMASS+: THIS WILL HAVE A SMALLER NUMBER OF NESTS BECAUSE SOILS DATA FOR FEWER
-# 2) ONE OF COVER AND BMASS+ BUT NO SOILS (LARGER NUMBER OF NESTS)
-
-######################################################
-######################################################
+############################################################################################################
 ### PCA: Data Prep
-######################################################
-######################################################
+############################################################################################################
 
 #This is missing in a bunch of them, so will reduce sample size too much
 NEST.DATA.PCA.ALL$peak.soil.temp<-NULL
@@ -346,7 +311,6 @@ NEST.DATA.PCA.ALL$date.peak.soil.tem<-NULL
 NEST.DATA.PCA.ALL$soil.moisture.deep<-NULL
 
 NEST.DATA.PCA.NOSOILS<-NEST.DATA.PCA.ALL
-# # WILL THIS INCLUDE THE SOILS DATA?  TOGGLE ON OFF HERE
 NEST.DATA.PCA.NOSOILS$ph<-NULL
 NEST.DATA.PCA.NOSOILS$P<-NULL
 NEST.DATA.PCA.NOSOILS$K<-NULL
@@ -363,13 +327,13 @@ NEST.DATA.PCA.NOSOILS<-na.omit(NEST.DATA.PCA.NOSOILS)
 droplevels(NEST.DATA.PCA.ALL)
 droplevels(NEST.DATA.PCA.NOSOILS)
 
-str(NEST.DATA.PCA.ALL)
-summary(NEST.DATA.PCA.ALL)
-str(NEST.DATA.PCA.NOSOILS)
-summary(NEST.DATA.PCA.NOSOILS)
+# str(NEST.DATA.PCA.ALL)
+# summary(NEST.DATA.PCA.ALL)
+# str(NEST.DATA.PCA.NOSOILS)
+# summary(NEST.DATA.PCA.NOSOILS)
 
-# THIS REMOVES CANOPY COVER FROM THE PCA. IF YOU WANT TO DO A PCA THAT DEFINES ENVIRONMENTAL CONDITIONSIN A PLOT 
-# WITH CANOPY COVER INCLUDED TOGGLE THIS OFF. BUT FIRST CREATE A VECTOR OF CANOPY COVER IN CASE YOU NEED IT LATER
+# REMOVE CANOPY COVER FROM THE PCA (recall we are testing if canopy cover is independent in effects on env't and seedlings). 
+# BUT FIRST CREATE A VECTOR OF CANOPY COVER AND NEST AREA IN CASE YOU NEED IT LATER
 cover.nosoils<-NEST.DATA.PCA.NOSOILS$perc.cover
 cover.ALL<-NEST.DATA.PCA.ALL$perc.cover
 nest.area.nosoils<-NEST.DATA.PCA.NOSOILS$nest.area
@@ -381,24 +345,22 @@ NEST.DATA.PCA.NOSOILS$perc.cover<-NULL
 NEST.DATA.PCA.ALL$nest.area<-NULL
 NEST.DATA.PCA.NOSOILS$nest.area<-NULL
 
-# log transform 
+# if you wanted to log transform your variables you would do so here. However, we aren't trasnforming as per convo with HLV
 # env.vars <- log(NEST.DATA.PCA[, 5:18]+1)
-# no transformation as per HLV
-
-# #FOR PCA ALL (WITH SOILS)
+ 
+# FOR PCA ALL (WITH SOILS)
 env.vars.all <- NEST.DATA.PCA.ALL[,5:dim(NEST.DATA.PCA.ALL)[2]] #did it with dim because so that you don't have to adjust this if you decide to include canopy cover in the PCA
 site.cats.all <- NEST.DATA.PCA.ALL[, 1:4]
 
-# #FOR PCA ALL (NO SOILS)
+# FOR PCA ALL (NO SOILS)
 env.vars.nosoil <- NEST.DATA.PCA.NOSOILS[,5:dim(NEST.DATA.PCA.NOSOILS)[2]] #did it with dim because so that you don't have to adjust this if you decide to include canopy cover in the PCA
 site.cats.nosoil <- NEST.DATA.PCA.NOSOILS[, 1:4]
 
 
-######################################################
-######################################################
-### PCA with ALL PLOT (no soils chem)
-######################################################
-######################################################
+
+############################################################################################################
+### PCA-all (no soils chem, all plots and nests)
+############################################################################################################
 
 # apply PCA - scale. = TRUE is highly advisable, but default is FALSE. 
 nest.env.pca.nosoil <- prcomp(env.vars.nosoil,
@@ -426,7 +388,7 @@ summary(nest.env.pca.nosoil)
 
 ######################################################
 ######################################################
-### PCA with only NEST and FAR PLOTS  (with soils chem)
+### PCA-subset (with soils chem, only plots "on" and "far")
 ######################################################
 ######################################################
 
@@ -452,54 +414,19 @@ plot(nest.env.pca.all, type = "l")
 summary(nest.env.pca.all)
 
 
-# BOOTSTRAP TO SEE IF SAMPLERATIO OF SAMPLES TO VARIABLES A PROBLEM
-bootvector<-NULL 
-noisevector<-NULL #this is to record how many times you had to add "noise" to the Mg column
-for (i in 1:10000) {
-# bootstrap sample the data
-boot_data<-sample_frac(env.vars.all,1,replace=TRUE)
-# the values for Mg are almost all 0.1. If your bootstrap sample has all 0.1 in the Mg column, then it can't do the PCA. Get around this by adding a little noise.
-if (mean(boot_data$Mg)==0.1){
-    boot_data$Mg<-boot_data$Mg+runif(20, min=0.00001, max=0.00009)
-    noisevector[i]<-1
-}
-# load your function to calclulate the PCA for your bootstrapped dataset 
-# and return the variance expakined by the 1st principal component
-getPrcVar <- function (df){
-  prcs <- prcomp(df,center = TRUE, scale. = TRUE) # returns matrix
-  #return(prcs$importance[2,1]) # pick out the thing we need
-  return(summary(prcs)) # pick out the thing we need
-}
-# record the var explained by the 1st PCA
-bootvector[i]<-getPrcVar(boot_data)$importance[2,1]
- next
-}
-# bootvector
-# hist(bootvector)
-#proportion of the bootsrapped samples with #var of 1st PCA LOWER than the actual value. 
-# sum(bootvector<summary(nest.env.pca.nosoil)$importance[2,1])/i
-
-cat("actual prop of variance explained by 1st PCA: ", (summary(nest.env.pca.nosoil)$importance[2,1]))
-cat("mean of the variance explained by 1st PCA in bootstrapped runs: ",mean(bootvector))
-cat("sd of variance explained by 1st PC in bootstrapped runs: ",sd(bootvector))
-cat("proportion of the bootstrapped 'variance of 1st PCA' < 'actual var explained by 1st PCA': ", sum(bootvector<summary(nest.env.pca.nosoil)$importance[2,1])/i)
-# summary(noisevector)
-# summary(nest.env.pca.nosoil)$importance[2,1]
-
 
 ##############################################
-###   PCA FIG - ALL PLOTS (NO SOILS) - FIG 2A        ##NEED TO FIX SIZES SO HAVE A GREATER RANGE (point size line)
+###   FIG 2A - PCA-subset (NO SOILS, ALL PLOTS
 ##############################################
 
 location.nosoil<-site.cats.nosoil$location
 cover.nosoil<-env.vars.nosoil$perc.cover
 nest.nosoil<-site.cats.nosoil$nest
 
-# FIGURE - PCA WITH SOILS (REDUCED NUMBER OF PLOTS)
-
 # The list used to make the figure is uses the column names (i.e., grass.biomass). The next three lines
 # Will replace these names with those you actually want to appear in the figure.  
 # Note this doesn't change the names in the original dataframe
+# ?ggbiplot for more info on arguments you can change and % used to draw ellipses aroudnd points
 
 nest.env.pca.nosoil$rotation
 dimnames(nest.env.pca.nosoil$rotation)
@@ -536,25 +463,19 @@ g_NOsoils <-g_NOsoils + guides(size="none", colour="none")
 print(g_NOsoils)
 
 
-#####################################################################
-###   PCA FIG - ONLY PLOTS ON AND FAR (WITH SOILS CHEM) - FIG 2B         ##NEED TO FIX SIZES SO HAVE A GREATER RANGE (point size line)
-####################################################################
+##############################################
+###   FIG 2B - PCA-all (SOILS, ONLY "ON" and "FAR" PLOTS
+##############################################
 
-# The Figure below is a biplot generated by the function ggbiplot of the ggbiplot package available on https://github.com/vqv/ggbiplot
-# TO install: 
-# library(devtools)
-# install_github("ggbiplot", "vqv")
-# library(ggbiplot)
-# ?ggbiplot for more info on arguments you can change and % used to draw ellipses aroudnd points
 location.all<-site.cats.all$location
 cover.all<-env.vars.all$perc.cover
 nest.all<-site.cats.all$nest
 
-# FIGURE - PCA WITH SOILS (REDUCED NUMBER OF PLOTS)
-
 # The list used to make the figure is uses the column names (i.e., grass.biomass). The next three lines
 # Will replace these names with those you actually want to appear in the figure.  
 # Note this doesn't change the names in the original dataframe
+# ?ggbiplot for more info on arguments you can change and % used to draw ellipses aroudnd points
+
 nest.env.pca.all$rotation
 dimnames(nest.env.pca.all$rotation)
 dimnames(nest.env.pca.all$rotation)[[1]]<-c("litter", "soil penet.", "grass", 
@@ -592,11 +513,9 @@ g_soils <-g_soils + guides(size="none", colour="none")
 print(g_soils)
 
 
-######################################################
-######################################################
+############################################################################################################
 ### ANALYSES OF SEEDLING # AND DIV VS PCA SCORES
-######################################################
-######################################################
+############################################################################################################
 
 #########################################
 ## START BY EXTRACTING COMPONENT SCORES - PCA NO SOIL CHEM
@@ -624,9 +543,9 @@ names(GLM.DATA.all)[4]<-"PCA1.all" #reaname the column
 names(GLM.DATA.all)[5]<-"PCA2.all" #rename the column
 
 
-####################################
+########################################################################
 ###DATA ENTRY AND CLEANUP: SEEDLINGS
-####################################
+########################################################################
 
 VEG<-read.csv("./Data/ActiveNests_CensoVeg_1.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 summary(VEG)
@@ -828,7 +747,7 @@ reported.table.pca1[['dAIC']] <-  with(reported.table.pca1, AIC - min(AIC))
 reported.table.pca1[['wAIC']] <- with(reported.table.pca1, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
 reported.table.pca1$AIC <- NULL
 reported.table.pca1 <- reported.table.pca1[order(reported.table.pca1$dAIC),]
-write.csv(reported.table.pca1, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/PCA2vLoc.csv", row.names = F) #export it as a csv file
+write.csv(reported.table.pca1, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al PeerJ (Ch2)/PeerJ v2/PCA2vLoc.csv", row.names = F) #export it as a csv file
 
 ##################################################################################
 ##################################################################################
@@ -880,7 +799,7 @@ reported.table.pca1[['dAIC']] <-  with(reported.table.pca1, AIC - min(AIC))
 reported.table.pca1[['wAIC']] <- with(reported.table.pca1, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
 reported.table.pca1$AIC <- NULL
 reported.table.pca1 <- reported.table.pca1[order(reported.table.pca1$dAIC),]
-write.csv(reported.table.pca1, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al MS 1 (Ch2)/PCA2vLoc.csv", row.names = F) #export it as a csv file
+write.csv(reported.table.pca1, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al PeerJ (Ch2)/PeerJ v2/PCA2vLoc.csv", row.names = F) #export it as a csv file
 
 
 ##################################################################################
@@ -923,8 +842,6 @@ cor.test(DATA2$perc.cover,DATA2$PCA2.nosoil)
 ##############################################
 # Figure: PCA-NO-soils DATA vs. canopy cover FIG 3A
 ##############################################
-
-
 
 CoverEnvAll<-ggplot(DATA2, aes(x = perc.cover, y = PCA1.nosoil, col=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
@@ -1324,6 +1241,42 @@ foo<-group_by(NEST.DATA.PCA.ALL, nest)
 sdlgs.nosoil
 foo2<-inner_join(foo,sdlgs.nosoil, by="nest")
 str(foo2)
+
+
+ 
+# IN RESPINSE TO REVIEWS OF V1: BOOTSTRAP TO SEE IF RATIO OF SAMPLES TO VARIABLES A PROBLEM for our PCA
+bootvector<-NULL 
+noisevector<-NULL #this is to record how many times you had to add "noise" to the Mg column
+for (i in 1:10000) {
+  # bootstrap sample the data
+  boot_data<-sample_frac(env.vars.all,1,replace=TRUE)
+  # the values for Mg are almost all 0.1. If your bootstrap sample has all 0.1 in the Mg column, then it can't do the PCA. Get around this by adding a little noise.
+  if (mean(boot_data$Mg)==0.1){
+    boot_data$Mg<-boot_data$Mg+runif(20, min=0.00001, max=0.00009)
+    noisevector[i]<-1
+  }
+  # load your function to calclulate the PCA for your bootstrapped dataset 
+  # and return the variance expakined by the 1st principal component
+  getPrcVar <- function (df){
+    prcs <- prcomp(df,center = TRUE, scale. = TRUE) # returns matrix
+    #return(prcs$importance[2,1]) # pick out the thing we need
+    return(summary(prcs)) # pick out the thing we need
+  }
+  # record the var explained by the 1st PCA
+  bootvector[i]<-getPrcVar(boot_data)$importance[2,1]
+  next
+}
+# bootvector
+# hist(bootvector)
+#proportion of the bootsrapped samples with #var of 1st PCA LOWER than the actual value. 
+# sum(bootvector<summary(nest.env.pca.nosoil)$importance[2,1])/i
+
+cat("actual prop of variance explained by 1st PCA: ", (summary(nest.env.pca.nosoil)$importance[2,1]))
+cat("mean of the variance explained by 1st PCA in bootstrapped runs: ",mean(bootvector))
+cat("sd of variance explained by 1st PC in bootstrapped runs: ",sd(bootvector))
+cat("proportion of the bootstrapped 'variance of 1st PCA' < 'actual var explained by 1st PCA': ", sum(bootvector<summary(nest.env.pca.nosoil)$importance[2,1])/i)
+# summary(noisevector)
+# summary(nest.env.pca.nosoil)$importance[2,1]
 
 
 
