@@ -36,12 +36,14 @@ rm(list=ls())
 ### DATA ENTRY AND CLEANUP
 ############################################################################################################
 
-# #Step 1: load the individual CSV files and save them as dataframes
+# NEST DATA
+# Step 1: load the individual CSV files and save them as dataframes
 NEST.DATA<-read.csv("./Data/ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 # NEST.SIZE.DATA<-read.csv("./Data/nest-size-data.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 
-#make plot locations an ordered factor nest<adjacent<far
+# make plot locations an ordered factor nest<adjacent<far
 NEST.DATA$location=factor(NEST.DATA$location, levels=c("nest","adjacent", "far"), ordered=TRUE)
+
 # Make Nest ID a factor
 NEST.DATA$nest<-as.factor(NEST.DATA$nest)
 
@@ -60,6 +62,134 @@ str(NEST.DATA.both)
 # NEST.DATA.PCA.ALL<-NEST.DATA.CD
 # NEST.DATA.PCA.ALL<-NEST.DATA.CR
 NEST.DATA.PCA.ALL<-NEST.DATA.both
+
+# SEEDLINGS
+VEG<-read.csv("./Data/ActiveNests_CensoVeg_1.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+VEG$location=factor(VEG$location, levels=c("nest","adjacent", "far"), ordered=TRUE)
+VEG_both<-VEG[VEG$habitat=="CR"|VEG$habitat=="CD",] #both habitats
+VEG_both <- droplevels(VEG_both)
+
+
+############################################################################################################
+### APPENDIX C FIGURES: Canopy Cover vs. Envt'l Variables
+############################################################################################################
+# A) grass.bmass
+grass.canopy<-ggplot(NEST.DATA.PCA.ALL, aes(x = perc.cover, y = grass.bmass, colour=location, shape=location,fill=location)) + 
+  geom_point(size = 3) +
+  scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
+  scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
+  guides(fill = guide_legend(override.aes = list(linetype = 0)))+
+  ylab("Grass biomass (g)") +
+  xlab("Canopy cover (%)")+
+  geom_smooth(method=lm,se=FALSE)+   # Add linear regression lines
+  annotate ("text", x=5, y=1500, label="A", fontface="bold", size=8, color="black")
+grass.canopy<-grass.canopy + scale_y_continuous(breaks = seq(0, 1500, 250), limits = c(-1, 1500))
+grass.canopy<-grass.canopy + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-1, 100))
+grass.canopy<- grass.canopy + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
+        axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
+        axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
+        #legend.position = 'none',
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        legend.position = c(0.9,0.8),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+grass.canopy
+
+
+
+# B) litter.bmass
+litter.canopy<-ggplot(NEST.DATA.PCA.ALL, aes(x = perc.cover, y = litter.bmass, colour=location, shape=location,fill=location)) + 
+  geom_point(size = 3) +
+  scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
+  scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
+  guides(fill = guide_legend(override.aes = list(linetype = 0)))+
+  ylab("Litter biomass (g)") +
+  xlab("Canopy cover (%)")+
+  geom_smooth(method=lm,se=FALSE)+   # Add linear regression lines
+  annotate ("text", x=5, y=1250, label="B", fontface="bold", size=8, color="black")
+litter.canopy<-litter.canopy + scale_y_continuous(breaks = seq(0, 1250, 250), limits = c(-1, 1250))
+litter.canopy<-litter.canopy + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-1, 100))
+litter.canopy<- litter.canopy + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
+        axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
+        axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
+        #legend.position = 'none',
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        legend.position = c(0.9,0.8),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+litter.canopy
+
+
+
+# C) soil.pen
+soil.canopy<-ggplot(NEST.DATA.PCA.ALL, aes(x = perc.cover, y = soil.pen, colour=location, shape=location,fill=location)) + 
+  geom_point(size = 3) +
+  scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
+  scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
+  guides(fill = guide_legend(override.aes = list(linetype = 0)))+
+  ylab("Soil penetrability (mm)") +
+  xlab("Canopy cover (%)")+
+  geom_smooth(method=lm,se=FALSE)+   # Add linear regression lines
+  annotate ("text", x=5, y=12.5, label="C", fontface="bold", size=8, color="black")
+soil.canopy<-soil.canopy + scale_y_continuous(breaks = seq(2.5, 12.5, 2.5), limits = c(2.5, 12.5))
+soil.canopy<-soil.canopy + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-1, 100))
+soil.canopy<- soil.canopy + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
+        axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
+        axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
+        #legend.position = 'none',
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        legend.position = c(0.9,0.8),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+soil.canopy
+
+
+# D) soil.moisture.surface
+moisture.canopy<-ggplot(NEST.DATA.PCA.ALL, aes(x = perc.cover, y = soil.moisture.surface, colour=location, shape=location,fill=location)) + 
+  geom_point(size = 3) +
+  scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
+  scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
+  guides(fill = guide_legend(override.aes = list(linetype = 0)))+
+  ylab("Soil moisture") +
+  xlab("Canopy cover (%)")+
+  geom_smooth(method=lm,se=FALSE)+   # Add linear regression lines
+  annotate ("text", x=5, y=7.5, label="D", fontface="bold", size=8, color="black")
+moisture.canopy<-moisture.canopy + scale_y_continuous(breaks = seq(1.5, 7.5, 1), limits = c(1.5, 7.5))
+moisture.canopy<-moisture.canopy + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-1, 100))
+moisture.canopy<- moisture.canopy + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
+        axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
+        axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
+        #legend.position = 'none',
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        legend.position = c(0.1,0.8),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+moisture.canopy
+
+
+
+
+
 
 
 ############################################################################################################
@@ -93,8 +223,7 @@ cover.fig.gradient
 
 
 ############################################################################################################
-### Analyses: Does Canopy Cover vary with Proimity to ant nests?  
-### Figure: FIG 1B
+### Analyses: Does Canopy Cover vary with Proimity to ant nests? 
 ############################################################################################################
 
 # analyses
@@ -108,17 +237,20 @@ coverxhab %>% group_by(location) %>% summarise(var.perc.cover=var(perc.cover))
 coverxhab$cover.prop<-coverxhab$perc.cover/100
 coverxhab <- coverxhab[order(coverxhab$cover.prop),] 
 
-#logit trasnform and add smallest value to correct for zero as per http://www.esajournals.org/doi/full/10.1890/10-0340.1#appB
+# logit trasnform and add smallest value to correct for zero 
+# as per http://www.esajournals.org/doi/full/10.1890/10-0340.1#appB
 coverxhab$logit.cover<-log10((coverxhab$cover.prop+0.01)/(1-coverxhab$cover.prop+0.01))
 hist(coverxhab$logit.cover)
 qqnorm(coverxhab$logit.cover)
 qqline(coverxhab$logit.cover)
 
-bartlett.test(coverxhab$logit.cover ~ coverxhab$location)            # Bartlett test of homogeneity of variances
-shapiro.test(resid(aov(coverxhab$logit.cover ~ coverxhab$location))) # Shapiro-Wilk normality test  # NOT normally distributed (but we knew that) 
+# Bartlett test of homogeneity of variances
+bartlett.test(coverxhab$logit.cover ~ coverxhab$location)            
+# Shapiro-Wilk normality test Result: not normally distributed (but we knew that) 
+shapiro.test(resid(aov(coverxhab$logit.cover ~ coverxhab$location))) 
 
 # GLMM w/ CANOPY COVER AS FIXED
-options(na.action = "na.fail") #for calcl of QAIC see page 42: https://cran.r-project.org/web/packages/MuMIn/MuMIn.pdf
+options(na.action = "na.fail") #for calc of QAIC see page 42: https://cran.r-project.org/web/packages/MuMIn/MuMIn.pdf
 # only random effect
 cover1<-lmer((logit.cover) ~ (1|nest), data = coverxhab, REML = TRUE)
 summary(cover1)
@@ -166,6 +298,10 @@ reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
 reported.table[['wAIC']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
 reported.table$AIC <- NULL
 write.csv(reported.table, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al PeerJ (Ch2)/PeerJ v2/CoverxLocTable.csv", row.names = F) #export it as a csv file
+
+############################################################################################################
+### Figure 1B 
+############################################################################################################
 
 # Fig 1B Canopy cover for each plot splitr by nest 
 cover.fig.location<-ggplot(data=coverxhab, aes(x=location, y=perc.cover, group=nest)) +
@@ -247,10 +383,10 @@ cor.test(ph,P)  #SIGNIFICANT
 cor.test(P,K)
 cor.test(P,Ca)
 cor.test(P,Mg)
-cor.test(P,Al) #SIGNIFICANT
-cor.test(P,OM) #SIGNIFICANT
-cor.test(K,Ca) #SIGNIFICANT
-cor.test(K,Mg) #SIGNIFICANT
+cor.test(P,Al)  #SIGNIFICANT
+cor.test(P,OM)  #SIGNIFICANT
+cor.test(K,Ca)  #SIGNIFICANT
+cor.test(K,Mg)  #SIGNIFICANT
 cor.test(K,Al)
 cor.test(K,OM)
 cor.test(Ca,Mg) #SIGNIFICANT
@@ -270,19 +406,19 @@ cor.test(pc,P)
 
 # Envt'l with Soil Chem
 cor.test(lb,ph) #SIGNIFICANT
-cor.test(lb,P) #SIGNIFICANT
+cor.test(lb,P)  #SIGNIFICANT
 cor.test(lb,K)
 cor.test(lb,Ca) #SIGNIFICANT
 cor.test(lb,Mg)
 cor.test(lb,Al) #SIGNIFICANT
 cor.test(lb,OM)
 cor.test(sp,ph)
-cor.test(sp,P) #SIGNIFICANT
+cor.test(sp,P)  #SIGNIFICANT
 cor.test(sp,K)
 cor.test(sp,Ca)
 cor.test(sp,Mg)
 cor.test(sp,Al) #SIGNIFICANT
-cor.test(sp,OM)  #SIGNIFICANT
+cor.test(sp,OM) #SIGNIFICANT
 cor.test(sp,sh) #SIGNIFICANT
 cor.test(gb,ph)
 cor.test(gb,P)
@@ -293,12 +429,12 @@ cor.test(gb,Al)
 cor.test(gb,OM) #SIGNIFICANT
 cor.test(gb,sh)
 cor.test(sh,ph) #SIGNIFICANT
-cor.test(sh,P) #SIGNIFICANT
+cor.test(sh,P)  #SIGNIFICANT
 cor.test(sh,K)
 cor.test(sh,Ca)
 cor.test(sh,Mg)
-cor.test(sh,Al)  #SIGNIFICANT
-cor.test(sh,OM)  #SIGNIFICANT
+cor.test(sh,Al) #SIGNIFICANT
+cor.test(sh,OM) #SIGNIFICANT
  
 ############################################################################################################
 ### PCA: Data Prep
@@ -319,7 +455,6 @@ NEST.DATA.PCA.NOSOILS$Mg<-NULL
 NEST.DATA.PCA.NOSOILS$Al<-NULL
 NEST.DATA.PCA.NOSOILS$org.mat<-NULL    
 
-
 #Clear all those with missing values to do PCA
 NEST.DATA.PCA.ALL<-na.omit(NEST.DATA.PCA.ALL) 
 NEST.DATA.PCA.NOSOILS<-na.omit(NEST.DATA.PCA.NOSOILS) 
@@ -332,7 +467,8 @@ droplevels(NEST.DATA.PCA.NOSOILS)
 # str(NEST.DATA.PCA.NOSOILS)
 # summary(NEST.DATA.PCA.NOSOILS)
 
-# REMOVE CANOPY COVER FROM THE PCA (recall we are testing if canopy cover is independent in effects on env't and seedlings). 
+# REMOVE CANOPY COVER FROM THE PCA 
+# (recall we are testing if canopy cover is independent in effects on env't and seedlings). 
 # BUT FIRST CREATE A VECTOR OF CANOPY COVER AND NEST AREA IN CASE YOU NEED IT LATER
 cover.nosoils<-NEST.DATA.PCA.NOSOILS$perc.cover
 cover.ALL<-NEST.DATA.PCA.ALL$perc.cover
@@ -345,7 +481,8 @@ NEST.DATA.PCA.NOSOILS$perc.cover<-NULL
 NEST.DATA.PCA.ALL$nest.area<-NULL
 NEST.DATA.PCA.NOSOILS$nest.area<-NULL
 
-# if you wanted to log transform your variables you would do so here. However, we aren't trasnforming as per convo with HLV
+# if you wanted to log transform your variables you would do so here. 
+# However, we aren't transforming as per convo with HLV
 # env.vars <- log(NEST.DATA.PCA[, 5:18]+1)
  
 # FOR PCA ALL (WITH SOILS)
@@ -355,7 +492,6 @@ site.cats.all <- NEST.DATA.PCA.ALL[, 1:4]
 # FOR PCA ALL (NO SOILS)
 env.vars.nosoil <- NEST.DATA.PCA.NOSOILS[,5:dim(NEST.DATA.PCA.NOSOILS)[2]] #did it with dim because so that you don't have to adjust this if you decide to include canopy cover in the PCA
 site.cats.nosoil <- NEST.DATA.PCA.NOSOILS[, 1:4]
-
 
 
 ############################################################################################################
@@ -386,18 +522,16 @@ summary(nest.env.pca.nosoil)
 
 
 
-######################################################
-######################################################
+############################################################################################################
 ### PCA-subset (with soils chem, only plots "on" and "far")
-######################################################
-######################################################
+############################################################################################################
 
 # apply PCA - scale. = TRUE is highly advisable, but default is FALSE. 
 nest.env.pca.all <- prcomp(env.vars.all,
                            center = TRUE,
                            scale. = TRUE) 
 
-#Visualizing the results.
+# Visualizing the results.
 # The print method returns the standard deviation of each of the four PCs, 
 # and their rotation (or loadings), which are the coefficients of the linear combinations of the continuous variables.
 print(nest.env.pca.all)
@@ -413,11 +547,9 @@ plot(nest.env.pca.all, type = "l")
 # summary method
 summary(nest.env.pca.all)
 
-
-
-##############################################
+############################################################################################################
 ###   FIG 2A - PCA-subset (NO SOILS, ALL PLOTS
-##############################################
+############################################################################################################
 
 location.nosoil<-site.cats.nosoil$location
 cover.nosoil<-env.vars.nosoil$perc.cover
@@ -463,9 +595,9 @@ g_NOsoils <-g_NOsoils + guides(size="none", colour="none")
 print(g_NOsoils)
 
 
-##############################################
+############################################################################################################
 ###   FIG 2B - PCA-all (SOILS, ONLY "ON" and "FAR" PLOTS
-##############################################
+############################################################################################################
 
 location.all<-site.cats.all$location
 cover.all<-env.vars.all$perc.cover
@@ -481,7 +613,6 @@ dimnames(nest.env.pca.all$rotation)
 dimnames(nest.env.pca.all$rotation)[[1]]<-c("litter", "soil penet.", "grass", 
                                             "pH", "P", "K", "Ca","Mg","Al","org mat","soil moisture")
 
-
 point.size<-cover.ALL*6
 g_soils <- ggbiplot(nest.env.pca.all, obs.scale = 1, var.scale = 1, 
                     group = location.all, ellipse = TRUE, 
@@ -491,9 +622,9 @@ g_soils <- ggbiplot(nest.env.pca.all, obs.scale = 1, var.scale = 1,
   scale_colour_manual(values=c("#000066","#666666"), guide=FALSE)+
   annotate ("text", x=-3, y=3.5, label="B) PCA-all", fontface=
               "bold", size=8, color="black")
-  #geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
-  # geom_point(aes(color=location.all, size = point.size)) + scale_size_identity()
-#I chose my own colors for the lines
+# geom_point(size=point.size)  #Scaling the size of the point by canopy cover. 100% canopy cover=point size = 6.  That is why each % is multiplied by 0.06
+# geom_point(aes(color=location.all, size = point.size)) + scale_size_identity()
+# I chose my own colors for the lines
 g_soils<-g_soils + scale_x_continuous(breaks = seq(-4, 4, 2), limits = c(-4, 4)) # I adjusted X axis so that I could read the larger labels on arrows
 g_soils<-g_soils + scale_y_continuous(breaks = seq(-4, 4, 2), limits = c(-4,4)) # I adjusted Y axis so that I could read the larger labels on arrows
 
@@ -514,13 +645,14 @@ print(g_soils)
 
 
 ############################################################################################################
+############################################################################################################
 ### ANALYSES OF SEEDLING # AND DIV VS PCA SCORES
 ############################################################################################################
+############################################################################################################
 
-#########################################
+############################################################################################################
 ## START BY EXTRACTING COMPONENT SCORES - PCA NO SOIL CHEM
-#########################################
-
+############################################################################################################
 #nest.env.pca$x =  scores for each of the plots for each PCA
 pca.plot.scores.nosoil<-(nest.env.pca.nosoil$x) #this saves the matrix of PCA scores (all axes) for all plots 
 PCA.1.nosoil<-as.data.frame(pca.plot.scores.nosoil[,1]) #this saves the 1st column - PCA Axis 1 - as a dataframe
@@ -530,9 +662,9 @@ names(GLM.DATA.nosoil)[4]<-"PCA1.nosoil" #reaname the column
 names(GLM.DATA.nosoil)[5]<-"PCA2.nosoil" #rename the column
 
 
-#########################################
+############################################################################################################
 ## START BY EXTRACTING COMPONENT SCORES - PCA WITH SOIL CHEM
-#########################################
+############################################################################################################
 
 #nest.env.pca$x =  scores for each of the plots for each PCA
 pca.plot.scores.all<-(nest.env.pca.all$x) #this saves the matrix of PCA scores (all axes) for all plots 
@@ -543,20 +675,10 @@ names(GLM.DATA.all)[4]<-"PCA1.all" #reaname the column
 names(GLM.DATA.all)[5]<-"PCA2.all" #rename the column
 
 
-########################################################################
-###DATA ENTRY AND CLEANUP: SEEDLINGS
-########################################################################
 
-VEG<-read.csv("./Data/ActiveNests_CensoVeg_1.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
-summary(VEG)
-VEG$location=factor(VEG$location, levels=c("nest","adjacent", "far"), ordered=TRUE)
-
-VEG_both<-VEG[VEG$habitat=="CR"|VEG$habitat=="CD",] #both habitats
-VEG_both <- droplevels(VEG_both)
-
-###########################################################
-####### COUNT OF SEEDLINGS AND SPP RICH IN PLOTS ##########
-###########################################################
+############################################################################################################
+#### COUNT OF SEEDLINGS AND SPP RICH IN PLOTS 
+############################################################################################################
 
 VEG_both$ht_cm<-as.numeric(VEG_both$ht_cm)
 VEG_both$nest<-as.factor(VEG_both$nest)
@@ -652,13 +774,13 @@ sdlgs.all$cover.all<-NULL
 names(sdlgs.all)[5]<-"cover"
 
 
-#########################################
+############################################################################################################
 ## TEST: CORRELATION BETWEEN CANOPYY COVER & PCA SCORES: EDGE/NEST ONLY, WITH SOILS CHEM
 ##
 ## FIGURE: PCA SCORE vs. CANOPY COVER
 ##
 ## ANALYSIS: GLMM
-#########################################
+############################################################################################################
 
 # Testing for correlation between canopy cover and PCA axis scores
 DATA<-droplevels(na.omit(sdlgs.all))
@@ -666,10 +788,9 @@ cor.test(DATA$cover,DATA$PCA1.all)
 cor.test(DATA$cover,DATA$PCA2.all)
 
 
-##############################################
-# Plot: PCA-with-soils vs. canopy cover FIG 3B
-##############################################
-
+############################################################################################################
+# Fig 3B: PCA-with-soils vs. canopy cover 
+############################################################################################################
 CoverEnv<-ggplot(DATA, aes(x = cover, y = PCA1.all, col=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
   scale_shape_manual(values=c(16,15))+
@@ -804,31 +925,18 @@ write.csv(reported.table.pca1, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/A
 
 ##################################################################################
 ##################################################################################
-##################################################################################
-##################################################################################
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-#########################################
+############################################################################################################
 ## TEST: CORRELATION BETWEEN CANOPYY COVER & PCA SCORES : ALL PLOTS, NO SOILS CHEM
 ##
 ## FIGURE: PCA SCORE vs. CANOPY COVER
 ##
 ## ANALYSIS: GLMM
-#########################################
+############################################################################################################
 
 #############
 #CoverEnvAll 
@@ -839,9 +947,9 @@ cor.test(DATA2$perc.cover,DATA2$PCA1.nosoil)
 cor.test(DATA2$perc.cover,DATA2$PCA2.nosoil)
 
 
-##############################################
-# Figure: PCA-NO-soils DATA vs. canopy cover FIG 3A
-##############################################
+############################################################################################################
+# Figure 3A: PCA-NO-soils DATA vs. canopy cover 
+############################################################################################################
 
 CoverEnvAll<-ggplot(DATA2, aes(x = perc.cover, y = PCA1.nosoil, col=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
@@ -869,9 +977,9 @@ CoverEnvAll<- CoverEnvAll + theme_classic()+
         plot.margin =unit(c(0,1,1,1.5), "cm")) #+  #plot margin - top, right, bottom, left
 CoverEnvAll
 
-#############################
+############################################################################################################
 # ANALYSES
-#############################
+############################################################################################################
 
 RESPONSE<-DATA2$PCA2.nosoil
 COVARIATE<-DATA2$perc.cover
@@ -929,31 +1037,9 @@ write.csv(reported.table.pca2, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/A
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-####################################################################
-################# WHAT FACTORS INFLUENCE SEEDLING COUNT?  
-####################################################################
+############################################################################################################
+### WHAT FACTORS INFLUENCE SEEDLING COUNT?  
+############################################################################################################
 # Nice overview of GLMs here: http://plantecology.syr.edu/fridley/bio793/glm.html
 #  Need to consider nest a random effect
 # below is based on Grueber et al. 2011. J Evol Biol. 24:699-711.  
@@ -961,9 +1047,9 @@ write.csv(reported.table.pca2, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/A
 # for more on lmer/glmer error message:
 # http://stats.stackexchange.com/questions/35841/using-glmer-to-replicate-result-from-lmer-for-mulitlevel-modelling-in-r
 
-###################################
+############################################################################################################
 # WHICH DATASET and COVARIATE? 
-###################################
+############################################################################################################
 # If you are using all the biotic and abiotic data collected for the PCA then you are using sdlgs.all BUT
 # # this dataset only includes plot ON or AWAY from nests
 DATA<-droplevels(na.omit(sdlgs.all))
@@ -981,9 +1067,9 @@ COVARIATE3<-DATA$nest.area
 # COVARIATE2<-DATA$perc.cover
 # COVARIATE3<-DATA$nest.area
 
-###################################
-# WHAT RESPONSE VARIABLE? Seedling number per plot or seedling species richness per plot?
-###################################
+############################################################################################################
+### WHAT RESPONSE VARIABLE? Seedling number per plot or seedling species richness per plot?
+############################################################################################################
 RESPONSE<-DATA$sdlg.no  
 # OR 
 RESPONSE<-DATA$spp.no
@@ -1018,21 +1104,7 @@ summary(global.model)
 
 
 # testing for overdipsersion: http://glmm.wikidot.com/faq, Section "How can I deal with overdispersion in GLMMs?"
-overdisp_fun <- function(model) {
-  ## number of variance parameters in 
-  ##   an n-by-n variance-covariance matrix
-  vpars <- function(m) {
-    nrow(m)*(nrow(m)+1)/2
-  }
-  
-  model.df <- sum(sapply(VarCorr(model),vpars))+length(fixef(model))
-  rdf <- nrow(model.frame(model))-model.df
-  rp <- residuals(model,type="pearson")
-  Pearson.chisq <- sum(rp^2)
-  prat <- Pearson.chisq/rdf
-  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
-  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
-}
+source("overdisp_fun.R")
 overdisp_fun(global.model)
 
 # #from http://glmm.wdfiles.com/local--files/examples/Owls.pdf
@@ -1099,9 +1171,9 @@ write.csv(reported.table.global, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS
 
 
 
-##########################################################
-# PLOT OF SEEDLING ABUNDNACE VS canopy cover FIG 4A
-##########################################################
+############################################################################################################
+# Fig 4A: PLOT OF SEEDLING ABUNDNACE VS canopy cover 
+############################################################################################################
 
 canopy.sdlgs.fig1<-ggplot(sdlgs.nosoil, aes(x = perc.cover, y = sdlg.no, colour=location, shape=location, fill=location)) + 
   geom_point(size = 3) +
@@ -1132,9 +1204,9 @@ canopy.sdlgs.fig1<- canopy.sdlgs.fig1 + theme_classic()+
 canopy.sdlgs.fig1
 
 
-##########################################################
-# PLOT OF SEEDLING RICHNESS VS canopy cover FIG 4B
-##########################################################
+############################################################################################################
+# Fig 4B: PLOT OF SEEDLING RICHNESS VS canopy cover
+############################################################################################################
 
 canopy.sdlgs.fig2<-ggplot(sdlgs.nosoil, aes(x = perc.cover, y = spp.no, colour=location, shape=location, fill=location)) + 
   geom_point(size = 3) +
@@ -1164,9 +1236,9 @@ canopy.sdlgs.fig2
 
 
 
-##########################################################
-## SUMMARY DATA
-##########################################################
+############################################################################################################
+### SUMMARY DATA
+############################################################################################################
 
 # This will calculate means of each column ignoring the NAs in each.
 # SUMM <- NEST.DATA.PCA.ALL %>%
@@ -1197,50 +1269,13 @@ common.spp<-as.data.frame(count(VEG_both, species))
 common.spp<-common.spp[order(-common.spp$n),] #- to make it descending order
 
 
-##########################################################
+############################################################################################################
 # PLOTS OF INDIVIDUAL VARIABLES VS canopy cover APPENDIX D
 # USES AS dataset = NEST.DATA.PCA.NOSOILS
 # NEED TO FIRST TOGGLE OFF LINE 362 ABOVE (NEST.DATA.PCA.ALL$perc.cover<-NULL)
-##########################################################
+############################################################################################################
 
 #### MOVE THESE TO THE START OF THE CODE
-
-# grass.bmass
-# litter.bmass
-# soil.pen
-# soil.moisture.surface
-
-var.fig<-ggplot(NEST.DATA.PCA.ALL, aes(x = perc.cover, y = soil.moisture.surface, colour=location, shape=location,fill=location)) + 
-  geom_point(size = 3) +
-  scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
-  scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
-  guides(fill = guide_legend(override.aes = list(linetype = 0)))+
-  ylab("Soil moisture") +
-  xlab("Canopy cover (%)")+
-  geom_smooth(method=lm,se=FALSE)+   # Add linear regression lines
-  annotate ("text", x=5, y=85, label="D", fontface="bold", size=8, color="black")
-var.fig<-var.fig + scale_y_continuous(breaks = seq(0, 8, 2), limits = c(-1, 8))
-var.fig<-var.fig + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-5, 100))
-var.fig<- var.fig + theme_classic()+
-  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
-        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
-        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
-        axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
-        axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
-        #legend.position = 'none',
-        legend.title = element_blank(),   #Removes the Legend title
-        legend.text = element_text(color="black", size=16),  
-        legend.position = c(0.9,0.8),
-        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
-        plot.margin =unit(c(0,1,0,1.5), "cm")) #+  #plot margin - top, right, bottom, left
-var.fig
-
-
-foo<-group_by(NEST.DATA.PCA.ALL, nest)
-sdlgs.nosoil
-foo2<-inner_join(foo,sdlgs.nosoil, by="nest")
-str(foo2)
 
 
  
