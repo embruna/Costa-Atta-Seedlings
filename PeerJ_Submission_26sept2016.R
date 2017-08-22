@@ -69,13 +69,119 @@ VEG<-read.csv("./Data/ActiveNests_CensoVeg_1.csv", dec=".", header = TRUE, sep =
 VEG$location=factor(VEG$location, levels=c("nest","adjacent", "far"), ordered=TRUE)
 VEG_both<-VEG[VEG$habitat=="CR"|VEG$habitat=="CD",] #both habitats
 VEG_both <- droplevels(VEG_both)
+VEG_both <-dplyr::rename(VEG_both, spp.code=species)
+VEG_both$spp.code <-tolower(VEG_both$spp.code)
+VEG_both$spp.code<-as.factor(VEG_both$spp.code)
+VEG_both$spp.code[VEG_both$spp.code=="pro.epy"] <- "pro.epi"
+VEG_both$spp.code[VEG_both$spp.code=="manihot.sp"] <- "man.sp"
+VEG_both$spp.code<-droplevels(VEG_both$spp.code)
 
 # Species List
-SPP<-read.csv("./Data/SppList.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE , stringsAsFactors = TRUE)
+SPP<-read.csv("./Data/Spp_ID_Habit.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE , strip.white=TRUE, stringsAsFactors = FALSE)
+SPP$GS <- as.factor(paste(SPP$Genus, SPP$Species, sep=" "))
+SPP$spp.code<-tolower(SPP$spp.code)
+SPP$spp.code[SPP$spp.code=="manihot.sp"] <- "man.sp"
+SPP$spp.code<-as.factor(SPP$spp.code)
+SPP$spp.code<-droplevels(SPP$spp.code)
+levels(SPP$Genus)
+levels(SPP$GS)
+
+
+VEG_both<-full_join(SPP,VEG_both,by="spp.code") 
+# VEG_both<- VEG_both %>% dplyr::select(-Genus,-Species,-Author)
+
+# 
+# # ###DO WE KEEP THE HERBS OR NOT??
+# VEG_both<-VEG_both %>% dplyr::filter(Habit=="herb") #ONLY HERBS
+
+ VEG_both<-VEG_both %>% dplyr::filter(Habit!="herb") # NO HERBS
+ VEG_both$Habit<-as.factor(VEG_both$Habit)
+ VEG_both$Habit<-droplevels(VEG_both$Habit)
+ summary(VEG_both)
+
+
+# percentage by each species, and cumulative sum of most common
+top_species<-VEG_both %>% dplyr::select(spp.code) %>% ungroup(top_species)  
+top_species<-top_species %>% dplyr::group_by(spp.code) %>% dplyr::summarize(n=n()) %>% ungroup(top_species)
+top_species<-arrange(top_species,desc(n))
+top_species<-na.omit(top_species)
+top_species$perc<-top_species$n/sum(top_species$n)*100
+top_species<-ungroup(top_species)
+top_species<-as.data.frame(top_species)
+sum(top_species$perc)
+top_species<-mutate(top_species,cumulative=cumsum(perc))
+sum(top_species$n)
+#table of 20 most common species
+top_twenty<-slice(top_species,1:20)
+SPP_skinny<-SPP %>% dplyr::select(-Genus,-Species,-Author,-Habit)
+top_twenty<- dplyr::left_join(top_twenty,SPP_skinny, by="spp.code") %>% 
+
+
+# seedling height
+plant_ht<-VEG_both %>% dplyr::select(ht_cm) %>% ungroup(plant_ht)  
+plant_ht<-arrange(plant_ht,ht_cm)
+plant_ht<-na.omit(plant_ht)
+mean_ht<-mean(plant_ht$ht_cm)
+sd_ht<-sd(plant_ht$ht_cm)
+n_plant_ht<-nrow(plant_ht)
+
+
+range(plant_ht$ht_cm)
+breaks = seq(0, 125, by=10)
+ht.cut = cut(plant_ht$ht_cm, breaks, right=FALSE)
+ht.freq = table(ht.cut)
+ht.freq<-cbind(ht.freq) 
+ht.freq<-as.data.frame(ht.freq)
+ht.freq$percentage<-ht.freq$ht.freq/sum(ht.freq$ht.freq)*100
+ht.freq<-mutate(ht.freq,cumulative=cumsum(percentage))
 
 
 
 
+
+
+
+############################################################################################################
+### BASIC DATA ON HOW MANY SPECIES, seedling density, etc.
+
+############################################################################################################
+# how many genera
+DistinctGenera<-summarise(VEG_both,n_distinct(Genus))
+# how many species (including morphospp)
+DistinctSpecies<-summarise(VEG_both,n_distinct(GS))
+# how many morphospecies
+DistinctMorpho<-VEG_both %>% filter(Genus=="Morphospecies") %>% summarise(n_distinct(GS))
+prop.morpho<-DistinctMorpho/DistinctSpecies
+
+# OVERALL AVG SDLGS PER PLOT
+
+# FIRST NEED A dataframe with all plots - nest, location,. plot id no
+all_plots<-dplyr::select(NEST.DATA.both, habitat, nest, location, plot.id, perc.cover)
+all_plots<-droplevels(na.omit(all_plots))
+all_plots<-dplyr::select(all_plots,-perc.cover)
+all_plots$plot.id<-as.factor(all_plots$plot.id)
+
+# summarize the number of plants n each plot (note that some plots aren't represented bc there were zero seedlings there)
+avg_per_plot<-VEG_both %>% group_by(plot.id) %>% dplyr::summarise(N=n_distinct(number)) 
+avg_per_plot$plot.id<-as.factor(avg_per_plot$plot.id)
+avg_per_plot<-as.data.frame(avg_per_plot)
+# join up the two, replace NA in N with zero
+avg_per_plot<-full_join(all_plots, avg_per_plot, by="plot.id")
+avg_per_plot$N[is.na(avg_per_plot$N)] <- 0
+
+# AVG, SD, Range
+avg_sdlgs<-mean(avg_per_plot$N)
+SD_sdlgs<-sd(avg_per_plot$N)
+range_sdlgs<-range(avg_per_plot$N)
+
+#  AVG SDLGS PER PLOT X LOCATION
+avg_by_loc<-avg_per_plot %>% group_by(location) %>% dplyr::summarise(mean=mean(N)) 
+sd_by_loc<-avg_per_plot %>% group_by(location) %>% dplyr::summarise(sd=sd(N)) 
+
+# avg spp. per plot per location (easier to do this with sdlgs.nosoil used to make figure
+
+spp_plot_loc<-sdlgs.nosoil %>% group_by(location) %>% dplyr::summarise(mean=mean(spp.no)) 
+spp_plot_loc<-sdlgs.nosoil %>% group_by(location) %>% dplyr::summarise(sd=sd(spp.no)) 
 
 ############################################################################################################
 ### TABLE 1: Does Canopy Cover vary with Proximity to ant nests? 
@@ -155,8 +261,7 @@ reported.table$AIC <- NULL
 ############################################################################################################
 ### TABLE 1: GLMM canopy cover v plot priximity  
 ############################################################################################################
-write.csv(reported.table, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Table1_CoverxLocTable.csv", row.names = F) #export it as a csv file
-
+write.csv(reported.table, file="./Output/Table1_CoverxLocTable.csv", row.names = F) #export it as a csv file
 
 
 
@@ -284,13 +389,22 @@ summary(nest.env.with.soilchem)
 ### TABLE 2: PCA Factor Loadings (no soils data, all plots)
 ############################################################################################################
 print(nest.env.pca.nosoil)
-write.csv(nest.env.pca.nosoil, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Table2_PCA_LOADS_NOSOIL.csv", row.names = F) #export it as a csv file
+names<-dimnames(nest.env.pca.nosoil$rotation)
+names<-as.data.frame(names[[1]])
+values<-as.data.frame(nest.env.pca.nosoil$rotation)
+nest.env.pca.nosoil.df<-cbind(names,values)
+write.csv(as.data.frame(nest.env.pca.nosoil.df), file="./Output/Table2_PCA_LOADS_NOSOIL.csv", row.names = F) #export it as a csv file
+rm(names,values,nest.env.pca.nosoil.df)
 ############################################################################################################
 ### TABLE 3: PCA Factor Loadings (soils, subset of plots)
 ############################################################################################################
 print(nest.env.with.soilchem)
-write.csv(nest.env.with.soilchem, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Table3_PCA_LOADS_NOSOIL.csv", row.names = F) #export it as a csv file
-
+names<-dimnames(nest.env.with.soilchem$rotation)
+names<-as.data.frame(names[[1]])
+values<-as.data.frame(nest.env.with.soilchem$rotation)
+nest.env.with.soilchem.df<-cbind(names,values)
+write.csv(nest.env.with.soilchem.df, file="./Output/Table3_PCA_LOADS_NOSOIL.csv", row.names = F) #export it as a csv file
+rm(names,values,nest.env.with.soilchem.df)
 
 
 
@@ -344,19 +458,19 @@ VEG_both$ht_cm<-as.numeric(VEG_both$ht_cm)
 VEG_both$nest<-as.factor(VEG_both$nest)
 summary(VEG_both)
 str(VEG_both)
-SppList<-VEG_both %>% select(species) %>%  group_by(species) %>% mutate(N=n_distinct(species)) %>% group_by(species) %>% summarize(N=sum(N)) %>% arrange(desc(N))
-sum(SppList$N)
-summarize(count(species))(N=count(species)) %>% arrange(N) 
-SppList<-distinct(SppList)
-write.csv(SppList, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v3/SppList.csv", row.names = F) #export it as a csv file
+# SppList<-VEG_both %>% select(species) %>%  group_by(species) %>% mutate(N=n_distinct(species)) %>% group_by(species) %>% summarize(N=sum(N)) %>% arrange(desc(N))
+# sum(SppList$N)
+# summarize(count(species))(N=count(species)) %>% arrange(N) 
+# SppList<-distinct(SppList)
+# write.csv(SppList, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v3/SppList.csv", row.names = F) #export it as a csv file
 
 
 
-#Remove the NA
-# VEG_both_summary<-na.omit(VEG_both)
-# VEG_both_summary<-as.data.frame(VEG_both_summary)
-# summary(VEG_both_summary)
-# str(VEG_both_summary)
+# #Remove the NA
+#  VEG_both_summary<-na.omit(VEG_both)
+#  VEG_both_summary<-as.data.frame(VEG_both_summary)
+#  summary(VEG_both_summary)
+#  str(VEG_both_summary)
 
 # can test with this: if it works, and gives you groups, then all is good. if not restart
 # iris %>%
@@ -376,43 +490,42 @@ write.csv(SppList, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2
 # dplyr solution to having .drop=FALSE to count plots with NA as having 0 plants in them
 # http://stackoverflow.com/questions/22523131/dplyr-summarise-equivalent-of-drop-false-to-keep-groups-with-zero-length-in
 # As an alternative, I will include plot.id, group, and count. This gives you the number of plots in your dataframe (with each plant having 
-# its associated plot in the long form table.  Yoiu then convert all 1 to 0 -> plots with no plants were counted as a single row
+# its associated plot in the long form table.  You then convert all 1 to 0 -> plots with no plants were counted as a single row
 # with an NA in it.  Ugly, but works
 select <- dplyr::select
-VEG_both_hack<-select(VEG_both,nest,location,species,plot.id)
-count.df<-VEG_both_hack %>%
-  group_by(nest, location) %>% dplyr::summarize(count = n())
-names(count.df)[3]<-"sdlg.no"
-count.df$sdlg.no[count.df$sdlg.no==1]<-0
-count.df
-
-#to see hpw many species each plot had, first reshape so that the data are in wide fomr
-spp.df.long<-select(VEG_both, nest, location, species, plot.id) #is there a dplyr equivalent?????
-spp.df.wide<-dcast(spp.df.long, nest+location ~ species)
-spp.df.wide<-spp.df.wide[,c(3:197)]
-spp.df<-rowSums(spp.df.wide != 0)
-
-
-#checking to make sure number of rows is the same to cbind
+count.df<-select(VEG_both,nest,location,spp.code,plot.id)
+count.df<-na.omit(count.df)
+count.df<-count.df %>%  group_by(nest, location) %>% dplyr::summarise(sdlg.no = n()) %>% ungroup()
 dim(count.df)
-dim(spp.df.wide)
+
+spp.no.df<-select(VEG_both,nest,location,spp.code,plot.id)
+spp.no.df<-na.omit(spp.no.df)
+spp.no.df<-spp.no.df %>%  group_by(nest, location) %>% dplyr::summarise(spp.no = n_distinct(spp.code)) %>% ungroup()
+dim(spp.no.df)
+
+sdlgs<-full_join(count.df,spp.no.df, by=c("nest","location"))
+dim(sdlgs)
+
+
+all.plots.df<-select(VEG_both,nest,location,plot.id) %>% group_by(nest, location,plot.id) %>% dplyr::summarise(sdlg.no = n()) %>% select(-sdlg.no) %>% ungroup()
+dim(all.plots.df)
+sdlgs<-full_join(all.plots.df,sdlgs, by=c("nest", "location"))
+dim(sdlgs)
+
 dim(NEST.DATA.both) 
 
-# add the column "plot.id" from NEST.DATA_both to create new summary df seedlings.  NB: THERE IS HIGH POTENTIAL FOR FUNCKING THINGS 
-# UP HERE, SO BE CAREFUL
-sdlgs<-cbind(NEST.DATA.both$plot.id, as.data.frame(count.df)) #NOTE: added the as.data.frame on 9/22, not sure why wouldn't do without conversion as before.
-names(sdlgs)[1]<-"plot.id" #rename the column
-
-# THIS CREATES A DATAFRAME YOU CAN BIND TO THE % COVER
-sdlgs<-cbind(sdlgs, spp.df)
-names(sdlgs)[5]<-"spp.no" #rename the column
-str(sdlgs)
 
 # BIND THEM UP....add % cover and nest area!!!
-sdlgs.perc.cover<-select(NEST.DATA.both, plot.id, perc.cover, nest.area)
+sdlgs.perc.cover<-select(NEST.DATA.both, plot.id, nest, location,perc.cover, nest.area)
 dim(sdlgs.perc.cover) #make sure same size as sdlgs dataframe
-sdlgs<-left_join(sdlgs, sdlgs.perc.cover, by = "plot.id")
-sdlgs<-na.omit(sdlgs)
+sdlgs<-full_join(sdlgs.perc.cover,sdlgs, by = "plot.id") %>% arrange(plot.id,nest.x,location.x) %>% select(-nest.y,-location.y) 
+sdlgs<-dplyr::rename(sdlgs,nest=nest.x,location=location.x)
+#replace any NA in col of sdlg count with zero (those are true zeros)
+sdlgs$sdlg.no[is.na(sdlgs$sdlg.no)] <- 0
+sdlgs$spp.no[is.na(sdlgs$spp.no)] <- 0
+
+# Still need?
+# sdlgs<-na.omit(sdlgs)
 
 
 dim(sdlgs)
@@ -424,21 +537,26 @@ str(GLM.DATAwithsoil)
 str(GLM.DATA.nosoil)
 
 # WILL USE THE FOLLOWING TO DO GLMS W/ NO SOILS IN PCA (i.e., larger sample size)
-sdlgs.nosoil<-cbind(sdlgs, GLM.DATA.nosoil)
-sdlgs.nosoil$nest.nosoil<-NULL
-sdlgs.nosoil$cover.nosoil<-NULL
-sdlgs.nosoil$location.nosoil<-NULL
+sdlgs<-arrange(sdlgs,nest,location)
+GLM.DATA.nosoil<-arrange(GLM.DATA.nosoil,nest.nosoil,location.nosoil)
+GLM.DATA.nosoil<-dplyr::rename(GLM.DATA.nosoil,nest=nest.nosoil,location=location.nosoil)
+sdlgs.nosoil<-inner_join(sdlgs,GLM.DATA.nosoil,by=c("nest","location"))
+# 
+# sdlgs.nosoil<-cbind(sdlgs, GLM.DATA.nosoil)
+# sdlgs.nosoil$nest.nosoil<-NULL
+# sdlgs.nosoil$cover.nosoil<-NULL
+# sdlgs.nosoil$location.nosoil<-NULL
 
-str(sdlgs.nosoil)
+dim(sdlgs.nosoil)
 
 # WILL USE THE FOLLOWING TO DO GLMS ***WITH*** SOILS IN PCA (i.e., larger sample size)
 sdlgswithsoil<-filter(sdlgs, location =="far" | location == "nest")
 # clean up column names and sort to do join of two dataframes of different sizes
 sdlgswithsoil$plot.id<-NULL
-sdlgswithsoil<-left_join(sdlgswithsoil,GLM.DATAwithsoil, by = c("nest" = "nestwithsoil","location" = "locationwithsoil"))
+sdlgswithsoil<-inner_join(sdlgswithsoil,GLM.DATAwithsoil, by = c("nest" = "nestwithsoil","location" = "locationwithsoil"))
 #NOW CHABGE NAMES BACK TO SIMPOLIFY THE ANALYSES BELOW
 sdlgswithsoil$coverwithsoil<-NULL
-names(sdlgswithsoil)[5]<-"cover"
+sdlgswithsoil<-dplyr::rename(sdlgswithsoil, cover=perc.cover)
 
 
 ############################################################################################################
@@ -526,7 +644,7 @@ reported.table.pcaNOSOIL
 ### TABLE 4: GLMM: proximity to ant nests on environbmental conditions (PCA NO SOILS DATA)
 ############################################################################################################
 reported.table.pcaNOSOIL
-write.csv(reported.table.pcaNOSOIL, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Table4_NO SOIL.csv", row.names = F) #export it as a csv file
+write.csv(reported.table.pcaNOSOIL, file="./Output/Table4_NO SOIL.csv", row.names = F) #export it as a csv file
 
 
 
@@ -614,7 +732,7 @@ reported.table.pcaWITHSOIL
 ############################################################################################################
 
 reported.table.pcaWITHSOIL 
-write.csv(reported.table.pcaWITHSOIL, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Table5_PCAWITHSOIL_TABLE5.csv", row.names = F) #export it as a csv file
+write.csv(reported.table.pcaWITHSOIL, file="./Output/Table5_PCAWITHSOIL_TABLE5.csv", row.names = F) #export it as a csv file
 
 
 
@@ -688,6 +806,8 @@ rdev/rdf
 # Here (with a hacked version of lme4 that allows per-observation random effects, i.e. a Poisson-lognormal distribution):
 DATA$obs <- 1:nrow(DATA) ## add observation number to data
 global.model.2 <- glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
+# global.model.2 <- glmer(sdlg.no ~ location + PCA1.nosoil + perc.cover + nest.area + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
+
 print(summary(global.model.2))
 
 # stdz.model<-standardize(global.model, standardize.y=FALSE)
@@ -743,7 +863,7 @@ reported.table.global6A
 ############################################################################################################
 ### TABLE 6: Seedling abundance and richness vs PCA NO SOILS
 ############################################################################################################
-write.csv(reported.table.global6A, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/global_6A.csv", row.names = F) #export it as a csv file
+write.csv(reported.table.global6A, file="./Output/global_6A.csv", row.names = F) #export it as a csv file
 
 
 
@@ -857,7 +977,7 @@ reported.table.global6B
 ############################################################################################################
 ### TABLE 6: Seedling abundance and richness vs PCA NO SOILS
 ############################################################################################################
-write.csv(reported.table.global6B, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/global_6B.csv", row.names = F) #export it as a csv file
+write.csv(reported.table.global6B, file="./Output/global_6B.csv", row.names = F) #export it as a csv file
 
 
 
@@ -974,7 +1094,7 @@ reported.table.global7A
 ############################################################################################################
 ### TABLE 7: Seedling abundance and richness vs PCA WITH SOILS
 ############################################################################################################
-write.csv(reported.table.global7A, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/global_7A.csv", row.names = F) #export it as a csv file
+write.csv(reported.table.global7A, file="./Output/global_7A.csv", row.names = F) #export it as a csv file
 
 
 
@@ -1088,7 +1208,7 @@ reported.table.global7B
 ############################################################################################################
 ### TABLE 7: Seedling abundance and richness vs PCA WITH SOILS
 ############################################################################################################
-write.csv(reported.table.global7B, file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/global_6B.csv", row.names = F) #export it as a csv file
+write.csv(reported.table.global7B, file="./Output/global_7B.csv", row.names = F) #export it as a csv file
 
 
 
@@ -1118,7 +1238,7 @@ write.csv(reported.table.global7B, file="/Users/emiliobruna/Dropbox/SHARED FOLDE
 ############################################################################################################
 NEST.DATA.with.soilchem<-NEST.DATA.both
 cover.fig.gradient<-ggplot(NEST.DATA.with.soilchem, aes(x=perc.cover, fill=habitat)) +
-  geom_histogram(binwidth=5, alpha=.7, position="identity", colour="black")+
+  geom_histogram(binwidth=10, alpha=.7, position="identity", colour="black")+
   scale_fill_grey(start=0.3, end=1, labels = c("Cerrado denso","Cerrado ralo"))+
   ylab("No. of plots") + 
   xlab("Canopy cover (%)")+
@@ -1178,12 +1298,12 @@ source("multiplot.R")
 
 Fig1<-multiplot(cover.fig.gradient,cover.fig.location, cols=1)
 
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Fig1.eps", plot = multiplot(cover.fig.gradient,cover.fig.location, cols=1), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/Fig1.eps", plot = multiplot(cover.fig.gradient,cover.fig.location, cols=1), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
 
 #or as 2 sep figs 
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Fig1A.tiff", cover.fig.gradient, device = "tiff", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Fig1B.eps", cover.fig.location, device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/Fig1A.tiff", cover.fig.gradient, device = "tiff", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/Fig1B.eps", cover.fig.location, device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
 
 ######################################################
@@ -1296,10 +1416,10 @@ print(g_soils)
 source("multiplot.R")
 
 Fig2<-multiplot(g_NOsoils,g_soils, cols=1)
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Fig2.eps", plot = multiplot(g_NOsoils,g_soils, cols=1), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/Fig2.eps", plot = multiplot(g_NOsoils,g_soils, cols=1), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 #Sep
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Fig2A.tif", g_NOsoils, device = "tiff", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Fig2B.tif", g_soils, device = "tiff", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/Fig2A.tif", g_NOsoils, device = "tiff", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/Fig2B.tif", g_soils, device = "tiff", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
 
 
@@ -1380,10 +1500,9 @@ CoverEnv
 source("multiplot.R")
 
 Fig3<-multiplot(CoverEnvAll,CoverEnv, cols=1)
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Fig3.eps", plot = multiplot(CoverEnvAll,CoverEnv, cols=1), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/Fig3.eps", plot = multiplot(CoverEnvAll,CoverEnv, cols=1), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
 ######################################################
-
 
 
 
@@ -1434,7 +1553,7 @@ canopy.sdlgs.fig2<-ggplot(sdlgs.nosoil, aes(x = PCA1.nosoil , y = spp.no, colour
   xlab("PCA-1 Axis 1 Score")+
   #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
   geom_smooth(method=lm,se=FALSE)+   # Add linear regression lines
-  annotate ("text", x=2.8, y=30, label="B", fontface="bold", size=8, color="black")
+  annotate ("text", x=2.8, y=30, label="C", fontface="bold", size=8, color="black")
 # canopy.sdlgs.fig2<-canopy.sdlgs.fig2 + scale_y_continuous(breaks = seq(0, 30, 5), limits = c(-5, 30))
 # canopy.sdlgs.fig2<-canopy.sdlgs.fig2 + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-5, 100))
 canopy.sdlgs.fig2<-canopy.sdlgs.fig2 + scale_y_continuous(breaks = seq(0, 30, 5), limits = c(-1, 31))
@@ -1463,7 +1582,7 @@ canopy.sdlgs.fig2
 source("multiplot.R")
 
 Fig4<-multiplot(canopy.sdlgs.fig1,canopy.sdlgs.fig2, cols=1)
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v2/Fig4.eps", plot = multiplot(canopy.sdlgs.fig1,canopy.sdlgs.fig2, cols=1), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/Fig4_18aug.eps", plot = multiplot(canopy.sdlgs.fig1,canopy.sdlgs.fig2, cols=1), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
 ######################################################
 
@@ -1471,6 +1590,92 @@ ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (Peer
 
 
 
+
+############################################################################################################
+# Fig 5A: PLOT OF SEEDLING ABUNDNACE VS canopy cover 
+############################################################################################################
+
+canopy.sdlgs.fig5<-ggplot(sdlgs.nosoil, aes(x = perc.cover, y = sdlg.no, colour=location, shape=location, fill=location)) + 
+  geom_point(size = 3) +
+  scale_shape_manual(values=c(16,17,15))+  # Use a square circle and triangle
+  scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
+  guides(fill = guide_legend(override.aes = list(linetype = 0)))+
+  ylab("seedling abundance") +
+  xlab("Canopy Cover (%)")+
+  geom_smooth(method=lm,se=FALSE)+ 
+  annotate ("text", x=90, y=90, label="B", fontface="bold", size=8, color="black")
+#scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+# Add linear regression lines
+canopy.sdlgs.fig5<-canopy.sdlgs.fig5 + scale_y_continuous(breaks = seq(0, 90, 15), limits = c(-1, 90))
+canopy.sdlgs.fig5<-canopy.sdlgs.fig5 + scale_x_continuous(breaks = seq(0, 100, 20), limits = c(0, 100))
+# canopy.sdlgs.fig1<-canopy.sdlgs.fig1 + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-5, 100))
+canopy.sdlgs.fig5<- canopy.sdlgs.fig5 + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-15, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
+        axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
+        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
+        legend.position = 'top',
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        # legend.position = c(0.9,0.8),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        plot.margin =unit(c(0,1,1,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+canopy.sdlgs.fig5
+
+
+############################################################################################################
+# Fig 4B: PLOT OF SEEDLING RICHNESS VS canopy cover
+############################################################################################################
+
+canopy.sdlgs.fig6<-ggplot(sdlgs.nosoil, aes(x = perc.cover , y = spp.no, colour=location, shape=location, fill=location)) + 
+  geom_point(size = 3) +
+  scale_shape_manual(values=c(16,17,15))+  # Use a square circle and triangle
+  scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
+  guides(fill = guide_legend(override.aes = list(linetype = 0)))+
+  ylab("Species richness") +
+  xlab("Canopy Cover (%)")+
+  #scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+  geom_smooth(method=lm,se=FALSE)+   # Add linear regression lines
+  annotate ("text", x=90, y=30, label="D", fontface="bold", size=8, color="black")
+# canopy.sdlgs.fig2<-canopy.sdlgs.fig2 + scale_y_continuous(breaks = seq(0, 30, 5), limits = c(-5, 30))
+# canopy.sdlgs.fig2<-canopy.sdlgs.fig2 + scale_x_continuous(breaks = seq(0, 100, 10), limits = c(-5, 100))
+canopy.sdlgs.fig6<-canopy.sdlgs.fig6 + scale_y_continuous(breaks = seq(0, 30, 5), limits = c(-1, 31))
+canopy.sdlgs.fig6<-canopy.sdlgs.fig6 + scale_x_continuous(breaks = seq(0, 100, 20), limits = c(0, 100))
+canopy.sdlgs.fig6<- canopy.sdlgs.fig6 + theme_classic()+
+  theme(plot.title = element_text(face="bold", size=18, vjust=-3, hjust=0.05),        #Sets title size, style, location
+        axis.title.x=element_text(colour="black", size = 20, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.title.y=element_text(colour="black", size = 20, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+        axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
+        axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
+        axis.text=element_text(colour="black", size = 18),                              #sets size and style of labels on axes
+        legend.title = element_blank(),   #Removes the Legend title
+        legend.text = element_text(color="black", size=16),  
+        legend.position='top',
+        # legend.position = c(0.9,0.8),
+        legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+        plot.margin =unit(c(0,1,1,1.5), "cm")) #+  #plot margin - top, right, bottom, left
+canopy.sdlgs.fig6
+
+
+
+######################################################
+# BINDING THESE UP TO MAKE FIGURE APPENDIX
+######################################################
+# uses source(muliplot.R) loaded at start of code
+source("multiplot.R")
+
+Fig5<-multiplot(canopy.sdlgs.fig5,canopy.sdlgs.fig6, cols=1)
+ggsave("./Output/Fig5_18aug.eps", plot = multiplot(canopy.sdlgs.fig1,canopy.sdlgs.fig2, cols=1), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+
+
+Fig6<-multiplot(canopy.sdlgs.fig1,canopy.sdlgs.fig2,canopy.sdlgs.fig5,canopy.sdlgs.fig6, cols=2)
+ggsave("./Output/Fig6_18aug.eps", plot = multiplot(canopy.sdlgs.fig1,canopy.sdlgs.fig2,canopy.sdlgs.fig5,canopy.sdlgs.fig6, cols=2), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+
+
+
+######################################################
 
 
 
@@ -1737,16 +1942,16 @@ moisture.canopy
 source("multiplot.R")
 
 FigAppC<-multiplot(grass.canopy,soil.canopy,litter.canopy, moisture.canopy, cols=2)
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v3/FigAppendixC.eps", plot = multiplot(grass.canopy, soil.canopy,litter.canopy, moisture.canopy, cols=2), device = "eps", scale = 1, width = 10, height = 10, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/FigAppendixC.eps", plot = multiplot(grass.canopy, soil.canopy,litter.canopy, moisture.canopy, cols=2), device = "eps", scale = 1, width = 10, height = 10, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
 # Sep panels
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v3/AppC-A.eps", grass.canopy, device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/AppC-A.eps", grass.canopy, device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v3/AppC-B.eps", soil.canopy,  device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/AppC-B.eps", soil.canopy,  device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v3/AppC-C.eps", litter.canopy,  device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/AppC-C.eps", litter.canopy,  device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
-ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v3/AppC-D.eps", moisture.canopy,device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
+ggsave("./Output/AppC-D.eps", moisture.canopy,device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
 # ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (PeerJ)/PeerJ v3/Fig4.eps", plot = multiplot(canopy.sdlgs.fig1,canopy.sdlgs.fig2, cols=1), device = "eps", scale = 1, width = NA, height = NA, units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
 
@@ -1754,8 +1959,31 @@ ggsave("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan//Paper 2 thesis Ch2 (Peer
 
 
 
-
-
+######################################################
+#  HISTOGRAM OF PLANT HEIGHT: APPENDIX D
+######################################################
+  str(VEG_both)
+  ht_histogram<-ggplot(VEG_both, aes(x=ht_cm, fill=location)) + 
+    geom_histogram(binwidth=15, position="dodge")
+    ht_histogram<-ht_histogram+scale_fill_manual(values=c("#000066","#0072B2","#666666"))+
+    ylab("Frequency") +
+    xlab("Plant height (cm)")
+    ht_histogram<-ht_histogram+scale_y_continuous(breaks = seq(0, 200, 20), limits = c(0, 200))
+    ht_histogram<-ht_histogram+scale_x_continuous(breaks = seq(0, 130, 10), limits = c(0, 130))
+    ht_histogram<-ht_histogram +theme_classic()+
+      theme(plot.title = element_text(face="bold", size=16, vjust=-3, hjust=0.05),        #Sets title size, style, location
+            axis.title.x=element_text(colour="black", size = 14, vjust=0),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+            axis.title.y=element_text(colour="black", size = 14, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+            axis.text=element_text(colour="black", size = 12),                              #sets size and style of labels on axes
+            axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
+            axis.line.x = element_line(color="black", size = 0.5, lineend="square"),
+            legend.position = 'right',
+            # legend.position = c(0.9,0.9),
+            # legend.title = element_blank(),   #Removes the Legend title
+            # legend.text = element_text(color="black", size=14),  
+            # legend.background = element_rect(colour = 'black', size = 0.5, linetype='solid'),
+            plot.margin =unit(c(1.5,1.5,1.5,1.5), "cm")) 
+    ht_histogram
 
 ############################################################################################################
 ### SUMMARY DATA
