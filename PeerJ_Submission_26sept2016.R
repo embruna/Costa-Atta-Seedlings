@@ -37,7 +37,10 @@ rm(list=ls())
 ### DATA ENTRY AND CLEANUP
 ############################################################################################################
 
-# NEST DATA
+#########################################
+#  Nest data import and selection
+#########################################
+
 # Step 1: load the individual CSV files and save them as dataframes
 NEST.DATA<-read.csv("./Data/ActiveNests_data_2-3-4-5-6.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 # NEST.SIZE.DATA<-read.csv("./Data/nest-size-data.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
@@ -47,62 +50,67 @@ NEST.DATA$location=factor(NEST.DATA$location, levels=c("nest","adjacent", "far")
 
 # Make Nest ID a factor
 NEST.DATA$nest<-as.factor(NEST.DATA$nest)
-
 # To double check ok toggle
 # head(NEST.DATA, 3)
 # str(NEST.DATA)
-
 # SELECT WHICH VEGETATION TYPE YOU WANT TO WORK WITH
 # NEST.DATA.CD<-filter(NEST.DATA, habitat =="CD")  # Select only Cerrado Denso 
 # NEST.DATA.CR<-filter(NEST.DATA, habitat == "CR") # Select only Cerrado Ralo
-NEST.DATA.both<-filter(NEST.DATA, habitat =="CD" | habitat == "CR") # Select only Cerrado Denso and Cerrado Ralo
-NEST.DATA.both<-droplevels(NEST.DATA.both)
-str(NEST.DATA.both)
+nest_data<-filter(NEST.DATA, habitat =="CD" | habitat == "CR") # Select only Cerrado Denso and Cerrado Ralo
+nest_data<-droplevels(nest_data)
+str(nest_data)
 
-# Which of the habitats are you going to analyze: CD, CR, or both?
-# NEST.DATA.with.soilchem<-NEST.DATA.CD
-# NEST.DATA.with.soilchem<-NEST.DATA.CR
-NEST.DATA.with.soilchem<-NEST.DATA.both
 
-# SEEDLINGS
+#########################################
+# Vegetation Census data and cleanup
+#########################################
 VEG<-read.csv("./Data/ActiveNests_CensoVeg_1.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 VEG$location=factor(VEG$location, levels=c("nest","adjacent", "far"), ordered=TRUE)
-VEG_both<-VEG[VEG$habitat=="CR"|VEG$habitat=="CD",] #both habitats
-VEG_both <- droplevels(VEG_both)
-VEG_both <-dplyr::rename(VEG_both, spp.code=species)
-VEG_both$spp.code <-tolower(VEG_both$spp.code)
-VEG_both$spp.code<-as.factor(VEG_both$spp.code)
-VEG_both$spp.code[VEG_both$spp.code=="pro.epy"] <- "pro.epi"
-VEG_both$spp.code[VEG_both$spp.code=="manihot.sp"] <- "man.sp"
-VEG_both$spp.code<-droplevels(VEG_both$spp.code)
 
-# Species List
-SPP<-read.csv("./Data/Spp_ID_Habit.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE , strip.white=TRUE, stringsAsFactors = FALSE)
-SPP$GS <- as.factor(paste(SPP$Genus, SPP$Species, sep=" "))
-SPP$spp.code<-tolower(SPP$spp.code)
-SPP$spp.code[SPP$spp.code=="manihot.sp"] <- "man.sp"
-SPP$spp.code<-as.factor(SPP$spp.code)
-SPP$spp.code<-droplevels(SPP$spp.code)
-levels(SPP$Genus)
-levels(SPP$GS)
+VEG <-dplyr::rename(VEG, spp.code=species)
+VEG$spp.code <-tolower(VEG$spp.code)
+VEG$spp.code<-as.factor(VEG$spp.code)
+VEG$spp.code[VEG$spp.code=="pro.epy"] <- "pro.epi"
+VEG$spp.code[VEG$spp.code=="manihot.sp"] <- "man.sp"
+VEG$spp.code<-droplevels(VEG$spp.code)
 
+veg_data<-VEG[VEG$habitat=="CR"|VEG$habitat=="CD",] #both habitats
+# veg_data<-VEG[VEG$habitat=="CR",] # CR habitat only
+# veg_data<-VEG[VEG$habitat=="CD",] # CD habitat only
+veg_data<- droplevels(veg_data)
 
-VEG_both<-full_join(SPP,VEG_both,by="spp.code") 
-# VEG_both<- VEG_both %>% dplyr::select(-Genus,-Species,-Author)
+#########################################
+# Species List Impost and cleanup
+#########################################
+spp_list<-read.csv("./Data/Spp_ID_Habit.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE , strip.white=TRUE, stringsAsFactors = FALSE)
+spp_list$GS <- as.factor(paste(spp_list$Genus, spp_list$Species, sep=" "))
+spp_list$spp.code<-tolower(spp_list$spp.code)
+spp_list$spp.code[spp_list$spp.code=="manihot.sp"] <- "man.sp"
+spp_list$spp.code<-as.factor(spp_list$spp.code)
+spp_list$spp.code<-droplevels(spp_list$spp.code)
+levels(spp_list$Genus)
+levels(spp_list$GS)
 
-# 
-# # ###DO WE KEEP THE HERBS OR NOT??
-# VEG_both<-VEG_both %>% dplyr::filter(Habit=="herb") #ONLY HERBS
+# Add genus, species, etc. to the dataset
+veg_data<-full_join(spp_list,veg_data,by="spp.code")
+veg_data<-veg_data %>% dplyr::select(-Author)
+# veg_data<- veg_data %>% dplyr::select(-Genus,-Species,-Author)
+# can now remove a bunch of datasets to cleanup the environment()
+rm(spp_list,VEG,NEST.DATA)
 
- VEG_both<-VEG_both %>% dplyr::filter(Habit!="herb") # NO HERBS
- VEG_both$Habit<-as.factor(VEG_both$Habit)
- VEG_both$Habit<-droplevels(VEG_both$Habit)
- summary(VEG_both)
+#########################################
+# plant type selction (herb, shrub, vine, tree)
+#########################################
+# veg_data<-veg_data %>% dplyr::filter(Habit=="herb") #ONLY HERBS
+veg_data<-veg_data %>% dplyr::filter(Habit!="herb") # NO HERBS
+veg_data$Habit<-as.factor(veg_data$Habit)
+veg_data$Habit<-droplevels(veg_data$Habit)
+summary(veg_data)
 
 
 # percentage by each species, and cumulative sum of most common
-top_species<-VEG_both %>% dplyr::select(spp.code) %>% ungroup(top_species)  
-top_species<-top_species %>% dplyr::group_by(spp.code) %>% dplyr::summarize(n=n()) %>% ungroup(top_species)
+top_species<-veg_data %>% dplyr::select(GS) %>% ungroup(top_species)  
+top_species<-veg_data %>% dplyr::group_by(GS) %>% dplyr::summarize(n=n()) %>% ungroup(top_species)
 top_species<-arrange(top_species,desc(n))
 top_species<-na.omit(top_species)
 top_species$perc<-top_species$n/sum(top_species$n)*100
@@ -112,21 +120,30 @@ sum(top_species$perc)
 top_species<-mutate(top_species,cumulative=cumsum(perc))
 sum(top_species$n)
 #table of 20 most common species
-top_twenty<-slice(top_species,1:20)
-SPP_skinny<-SPP %>% dplyr::select(-Genus,-Species,-Author,-Habit)
-top_twenty<- dplyr::left_join(top_twenty,SPP_skinny, by="spp.code") %>% 
+# top_twenty<-slice(top_species,1:20)
+
+# percentage of stems by veg type (shrub, tree, vine, herbaceous)
+veg_type_stems<-veg_data %>% dplyr::select(Habit) %>% dplyr::group_by(Habit) %>% dplyr::summarize(n=n()) 
+veg_type_stems$perc<-veg_type_stems$n/sum(veg_type_stems$n)*100
+veg_type_stems<-veg_type_stems %>% arrange(desc(perc))
+
+# percentage of species by veg type (shrub, tree, vine, herbaceous)
+veg_type_spp<-veg_data %>% dplyr::select(GS, Habit) %>% dplyr::distinct(GS,Habit) %>% dplyr::group_by(Habit) %>% dplyr::summarize(n=n()) 
+veg_type_spp$perc<-veg_type_spp$n/sum(veg_type_spp$n)*100
+veg_type_spp<-veg_type_spp %>% arrange(desc(perc))
+
+
 
 
 # seedling height
-plant_ht<-VEG_both %>% dplyr::select(ht_cm) %>% ungroup(plant_ht)  
+plant_ht<-veg_data %>% dplyr::select(ht_cm) %>% ungroup(plant_ht)  
 plant_ht<-arrange(plant_ht,ht_cm)
 plant_ht<-na.omit(plant_ht)
 mean_ht<-mean(plant_ht$ht_cm)
 sd_ht<-sd(plant_ht$ht_cm)
 n_plant_ht<-nrow(plant_ht)
+range_plant_ht<-range(plant_ht$ht_cm)
 
-
-range(plant_ht$ht_cm)
 breaks = seq(0, 125, by=10)
 ht.cut = cut(plant_ht$ht_cm, breaks, right=FALSE)
 ht.freq = table(ht.cut)
@@ -134,62 +151,94 @@ ht.freq<-cbind(ht.freq)
 ht.freq<-as.data.frame(ht.freq)
 ht.freq$percentage<-ht.freq$ht.freq/sum(ht.freq$ht.freq)*100
 ht.freq<-mutate(ht.freq,cumulative=cumsum(percentage))
+rm(ht.cut,breaks)
 
-
-
-
-
-
-
-############################################################################################################
-### BASIC DATA ON HOW MANY SPECIES, seedling density, etc.
-
-############################################################################################################
 # how many genera
-DistinctGenera<-summarise(VEG_both,n_distinct(Genus))
+DistinctGenera<-summarise(veg_data,n_distinct(Genus))
 # how many species (including morphospp)
-DistinctSpecies<-summarise(VEG_both,n_distinct(GS))
+DistinctSpecies<-summarise(veg_data,n_distinct(GS))
 # how many morphospecies
-DistinctMorpho<-VEG_both %>% filter(Genus=="Morphospecies") %>% summarise(n_distinct(GS))
+DistinctMorpho<-veg_data %>% filter(Genus=="Morphospecies") %>% summarise(n_distinct(GS))
 prop.morpho<-DistinctMorpho/DistinctSpecies
 
-# OVERALL AVG SDLGS PER PLOT
+# Average number of seedlings per plot - all plots combined
 
 # FIRST NEED A dataframe with all plots - nest, location,. plot id no
-all_plots<-dplyr::select(NEST.DATA.both, habitat, nest, location, plot.id, perc.cover)
+all_plots<-dplyr::select(nest_data, habitat, nest, location, plot.id, perc.cover)
 all_plots<-droplevels(na.omit(all_plots))
 all_plots<-dplyr::select(all_plots,-perc.cover)
 all_plots$plot.id<-as.factor(all_plots$plot.id)
 
 # summarize the number of plants n each plot (note that some plots aren't represented bc there were zero seedlings there)
-avg_per_plot<-VEG_both %>% group_by(plot.id) %>% dplyr::summarise(N=n_distinct(number)) 
+avg_per_plot<-veg_data %>% group_by(plot.id) %>% dplyr::summarise(N=n_distinct(number)) 
 avg_per_plot$plot.id<-as.factor(avg_per_plot$plot.id)
 avg_per_plot<-as.data.frame(avg_per_plot)
 # join up the two, replace NA in N with zero
 avg_per_plot<-full_join(all_plots, avg_per_plot, by="plot.id")
 avg_per_plot$N[is.na(avg_per_plot$N)] <- 0
+dim(avg_per_plot)
 
 # AVG, SD, Range
 avg_sdlgs<-mean(avg_per_plot$N)
 SD_sdlgs<-sd(avg_per_plot$N)
 range_sdlgs<-range(avg_per_plot$N)
+Total_sdlgs<-sum(avg_per_plot$N)
 
 #  AVG SDLGS PER PLOT X LOCATION
 avg_by_loc<-avg_per_plot %>% group_by(location) %>% dplyr::summarise(mean=mean(N)) 
 sd_by_loc<-avg_per_plot %>% group_by(location) %>% dplyr::summarise(sd=sd(N)) 
+avg_sd_bylocation<-full_join(avg_by_loc,sd_by_loc,by="location")
+rm(avg_by_loc,sd_by_loc)
+
+
+
+#################
+# NEED TO DO
+#################
 
 # avg spp. per plot per location (easier to do this with sdlgs.nosoil used to make figure
 
-spp_plot_loc<-sdlgs.nosoil %>% group_by(location) %>% dplyr::summarise(mean=mean(spp.no)) 
-spp_plot_loc<-sdlgs.nosoil %>% group_by(location) %>% dplyr::summarise(sd=sd(spp.no)) 
+# summarize the number of plants n each plot (note that some plots aren't represented bc there were zero seedlings there)
+spp.no.df<-veg_data %>% group_by(plot.id) %>% dplyr::summarise(spp_N=n_distinct(spp.code)) 
+spp.no.df$plot.id<-as.factor(spp.no.df$plot.id)
+spp.no.df<-as.data.frame(spp.no.df)
+# join up the two, replace NA in N with zero
+spp.no.df<-full_join(all_plots, spp.no.df, by="plot.id")
+spp.no.df$spp_N[is.na(spp.no.df$spp_N)] <- 0
+
+spp_plot_loc<-spp.no.df %>% group_by(location) %>% dplyr::summarise(mean=mean(spp_N)) 
+spp_plot_loc<-spp.no.df %>% group_by(location) %>% dplyr::summarise(sd=sd(spp_N)) 
+
+###################
+# summary tables
+###################
+
+sumstat_ht_labels<-c("mean ht","SD ht","min ht","max ht","N")
+sumstat_ht <-c(mean_ht, sd_ht, range_plant_ht,n_plant_ht)
+rm(mean_ht, sd_ht, range_plant_ht,n_plant_ht,plant_ht)
+
+sumstat_sdlg_per_plot_labels<-c("mean sdlgs per plot","SD sdlgs per plot","min sdlgs per plot","max sdlngs per plot","N")
+sumstat_sdlgs_per_plot<-c(avg_sdlgs,SD_sdlgs,range_sdlgs,Total_sdlgs)
+rm(avg_sdlgs,SD_sdlgs,range_sdlgs,Total_sdlgs)
+
+avg_sd_bylocation
+
+# 
+# 
+# 
+# 
+# # Write to .txt
+# write.table(sumstat, file = "sumstats.txt", sep = ",", quote = FALSE, row.names = F)
+
+
 
 ############################################################################################################
 ### TABLE 1: Does Canopy Cover vary with Proximity to ant nests? 
 ############################################################################################################
 
 # analyses
-str(NEST.DATA.both)
-coverxhab<-dplyr::select(NEST.DATA.both, habitat, nest, location, perc.cover, nest.area)
+str(nest_data)
+coverxhab<-dplyr::select(nest_data, habitat, nest, location, perc.cover, nest.area)
 coverxhab<-droplevels(na.omit(coverxhab))
 coverxhab %>% group_by(location) %>% summarise(mean.perc.cover=mean(perc.cover))
 coverxhab %>% group_by(location) %>% summarise(var.perc.cover=var(perc.cover))
@@ -250,8 +299,8 @@ dredge(cover5, rank = "AIC")
 # main effects of nest area and plot location, their interaction, and nest identity (5)
 # see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
 
-summary.table.cover <- do.call(rbind, lapply(list(cover1, cover4, cover5), broom::glance))
-summary.table.cover[["model"]] <- 1:3
+summary.table.cover <- do.call(rbind, lapply(list(cover1, cover2, cover3, cover4, cover5), broom::glance))
+summary.table.cover[["model"]] <- 1:5
 table.cols <- c("model", "df.residual", "deviance", "AIC")
 reported.table <- summary.table.cover[table.cols]
 names(reported.table) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
@@ -276,12 +325,12 @@ write.csv(reported.table, file="./Output/Table1_CoverxLocTable.csv", row.names =
 ############################################################################################################
 
 #This is missing in a bunch of them, so will reduce sample size too much
-NEST.DATA.with.soilchem$peak.soil.temp<-NULL
-NEST.DATA.with.soilchem$time.peak.soil.temp<-NULL
-NEST.DATA.with.soilchem$date.peak.soil.tem<-NULL
-NEST.DATA.with.soilchem$soil.moisture.deep<-NULL
+nest_data$peak.soil.temp<-NULL
+nest_data$time.peak.soil.temp<-NULL
+nest_data$date.peak.soil.tem<-NULL
+nest_data$soil.moisture.deep<-NULL
 
-NEST.DATA.PCA.NOSOILS<-NEST.DATA.with.soilchem
+NEST.DATA.PCA.NOSOILS<-nest_data
 NEST.DATA.PCA.NOSOILS$ph<-NULL
 NEST.DATA.PCA.NOSOILS$P<-NULL
 NEST.DATA.PCA.NOSOILS$K<-NULL
@@ -291,42 +340,67 @@ NEST.DATA.PCA.NOSOILS$Al<-NULL
 NEST.DATA.PCA.NOSOILS$org.mat<-NULL    
 
 #Clear all those with missing values to do PCA
-NEST.DATA.with.soilchem<-na.omit(NEST.DATA.with.soilchem) 
+# nest_data<-na.omit(nest_data) 
 NEST.DATA.PCA.NOSOILS<-na.omit(NEST.DATA.PCA.NOSOILS) 
-
-droplevels(NEST.DATA.with.soilchem)
+# droplevels(nest_data)
 droplevels(NEST.DATA.PCA.NOSOILS)
+dim(NEST.DATA.PCA.NOSOILS)
 
-# str(NEST.DATA.with.soilchem)
-# summary(NEST.DATA.with.soilchem)
-# str(NEST.DATA.PCA.NOSOILS)
-# summary(NEST.DATA.PCA.NOSOILS)
 
 # REMOVE CANOPY COVER FROM THE PCA 
 # (recall we are testing if canopy cover is independent in effects on env't and seedlings). 
 # BUT FIRST CREATE A VECTOR OF CANOPY COVER AND NEST AREA IN CASE YOU NEED IT LATER
 cover.nosoils<-NEST.DATA.PCA.NOSOILS$perc.cover
-coverwithsoil<-NEST.DATA.with.soilchem$perc.cover
 nest.area.nosoils<-NEST.DATA.PCA.NOSOILS$nest.area
-nest.areawithsoil<-NEST.DATA.with.soilchem$nest.area
 
-NEST.DATA.with.soilchem$perc.cover<-NULL
 NEST.DATA.PCA.NOSOILS$perc.cover<-NULL
-
-NEST.DATA.with.soilchem$nest.area<-NULL
 NEST.DATA.PCA.NOSOILS$nest.area<-NULL
+
+# FOR PCA ALL (NO SOILS)
+env.vars.nosoil <- dplyr::select(NEST.DATA.PCA.NOSOILS,litter.bmass,soil.pen,grass.bmass,soil.moisture.surface)  
+env.vars.nosoil<-na.omit(env.vars.nosoil)
+
+site.cats.nosoil <- dplyr::select(NEST.DATA.PCA.NOSOILS,habitat,nest,plot.id,location)
+site.cats.nosoil<-na.omit(site.cats.nosoil)
+
+dim(env.vars.nosoil)
+dim(site.cats.nosoil)
+
+
+
+# str(nest_data)
+# summary(nest_data)
+# str(NEST.DATA.PCA.NOSOILS)
+# summary(NEST.DATA.PCA.NOSOILS)
+
+
+# nest_data$perc.cover<-NULL
+# NEST.DATA.PCA.NOSOILS$perc.cover<-NULL
+
+# nest_data$nest.area<-NULL
+# NEST.DATA.PCA.NOSOILS$nest.area<-NULL
 
 # if you wanted to log transform your variables you would do so here. 
 # However, we aren't transforming as per convo with HLV
 # env.vars <- log(NEST.DATA.PCA[, 5:18]+1)
 
-# FOR PCA ALL (WITH SOILS)
-env.varswithsoil <- NEST.DATA.with.soilchem[,5:dim(NEST.DATA.with.soilchem)[2]] #did it with dim because so that you don't have to adjust this if you decide to include canopy cover in the PCA
-site.catswithsoil <- NEST.DATA.with.soilchem[, 1:4]
 
-# FOR PCA ALL (NO SOILS)
-env.vars.nosoil <- NEST.DATA.PCA.NOSOILS[,5:dim(NEST.DATA.PCA.NOSOILS)[2]] #did it with dim because so that you don't have to adjust this if you decide to include canopy cover in the PCA
-site.cats.nosoil <- NEST.DATA.PCA.NOSOILS[, 1:4]
+
+
+# FOR PCA ALL (WITH SOILS)
+NEST.DATA.PCA.WITH_SOILS <- nest_data
+NEST.DATA.PCA.WITH_SOILS<-dplyr::select(NEST.DATA.PCA.WITH_SOILS,perc.cover,nest.area,habitat,nest,plot.id,location,litter.bmass,soil.pen,grass.bmass,ph,P,K,Ca,Mg,Al,org.mat,soil.moisture.surface)  
+NEST.DATA.PCA.WITH_SOILS<-na.omit(NEST.DATA.PCA.WITH_SOILS)
+coverwithsoil<- NEST.DATA.PCA.WITH_SOILS %>% dplyr::select(perc.cover,plot.id)
+nest.areawithsoil<-NEST.DATA.PCA.WITH_SOILS %>% dplyr::select(nest,nest.area)
+
+env.varswithsoil<-dplyr::select(NEST.DATA.PCA.WITH_SOILS,litter.bmass,soil.pen,grass.bmass,ph,P,K,Ca,Mg,Al,org.mat,soil.moisture.surface)  
+env.varswithsoil <- na.omit(env.varswithsoil)
+
+site.catswithsoil <- dplyr::select(NEST.DATA.PCA.WITH_SOILS,habitat,nest,plot.id,location)
+site.catswithsoil<-na.omit(site.catswithsoil)
+dim(env.varswithsoil)
+dim(site.catswithsoil)
 
 
 
@@ -419,9 +493,9 @@ rm(names,values,nest.env.with.soilchem.df)
 ## START BY EXTRACTING COMPONENT SCORES - PCA NO SOIL CHEM
 ############################################################################################################
 
-location.nosoil<-site.cats.nosoil$location
-cover.nosoil<-cover.nosoils
-nest.nosoil<-site.cats.nosoil$nest
+location.nosoil<-as.data.frame(site.cats.nosoil$location)
+cover.nosoil<-as.data.frame(cover.nosoils)
+nest.nosoil<-as.data.frame(site.cats.nosoil$nest)
 
 
 #nest.env.pca$x =  scores for each of the plots for each PCA
@@ -429,36 +503,48 @@ pca.plot.scores.nosoil<-(nest.env.pca.nosoil$x) #this saves the matrix of PCA sc
 PCA.1.nosoil<-as.data.frame(pca.plot.scores.nosoil[,1]) #this saves the 1st column - PCA Axis 1 - as a dataframe
 PCA.2.nosoil<-as.data.frame(pca.plot.scores.nosoil[,2])#this saves the 2nd column - PCA Axis 2 - as a dataframe
 GLM.DATA.nosoil<-as.data.frame(cbind(nest.nosoil,location.nosoil, cover.nosoils, PCA.1.nosoil, PCA.2.nosoil))
+names(GLM.DATA.nosoil)[1]<-"nest" #reaname the column
+names(GLM.DATA.nosoil)[2]<-"location" #rename the column
+names(GLM.DATA.nosoil)[3]<-"cover" #rename the column
 names(GLM.DATA.nosoil)[4]<-"PCA1.nosoil" #reaname the column
 names(GLM.DATA.nosoil)[5]<-"PCA2.nosoil" #rename the column
 
-
+dim(GLM.DATA.nosoil)
 ############################################################################################################
 ## START BY EXTRACTING COMPONENT SCORES - PCA WITH SOIL CHEM
 ############################################################################################################
+locationwithsoil<-site.catswithsoil %>% dplyr::select(plot.id,location)
+dim(locationwithsoil)
 
-locationwithsoil<-site.catswithsoil$location
-coverwithsoil<-coverwithsoil
-nestwithsoil<-site.catswithsoil$nest
+coverwithsoil<-as.data.frame(coverwithsoil)
+dim(coverwithsoil)
 
+nestwithsoil<-site.catswithsoil %>% dplyr::select(plot.id,nest)
+dim(nestwithsoil)
+
+GLM.DATAwithsoil<-full_join(locationwithsoil,coverwithsoil,nestwithsoil, by="plot.id")
+GLM.DATAwithsoil<-na.omit(GLM.DATAwithsoil)
+GLM.DATAwithsoil<-as.data.frame(GLM.DATAwithsoil)
 #nest.env.pca$x =  scores for each of the plots for each PCA
 pca.plot.scoreswithsoil<-(nest.env.with.soilchem$x) #this saves the matrix of PCA scores (all axes) for all plots 
 PCA.1withsoil<-as.data.frame(pca.plot.scoreswithsoil[,1]) #this saves the 1st column - PCA Axis 1 - as a dataframe
 PCA.2withsoil<-pca.plot.scoreswithsoil[,2]#this saves the 2nd column - PCA Axis 2 - as a dataframe
-GLM.DATAwithsoil<-as.data.frame(cbind(nestwithsoil,locationwithsoil, coverwithsoil, PCA.1withsoil, PCA.2withsoil))
+
+GLM.DATAwithsoil<-cbind(GLM.DATAwithsoil,PCA.1withsoil, PCA.2withsoil)
+# GLM.DATAwithsoil<-as.data.frame(cbind(nestwithsoil,locationwithsoil, coverwithsoil, PCA.1withsoil, PCA.2withsoil))
 names(GLM.DATAwithsoil)[4]<-"PCA1withsoil" #reaname the column
 names(GLM.DATAwithsoil)[5]<-"PCA2withsoil" #rename the column
-
+names(GLM.DATAwithsoil)[3]<-"cover" #rename the column
 
 ############################################################################################################
 #### COUNT OF SEEDLINGS AND SPP RICH IN PLOTS 
 ############################################################################################################
 
-VEG_both$ht_cm<-as.numeric(VEG_both$ht_cm)
-VEG_both$nest<-as.factor(VEG_both$nest)
-summary(VEG_both)
-str(VEG_both)
-# SppList<-VEG_both %>% select(species) %>%  group_by(species) %>% mutate(N=n_distinct(species)) %>% group_by(species) %>% summarize(N=sum(N)) %>% arrange(desc(N))
+veg_data$ht_cm<-as.numeric(veg_data$ht_cm)
+veg_data$nest<-as.factor(veg_data$nest)
+summary(veg_data)
+str(veg_data)
+# SppList<-veg_data %>% select(species) %>%  group_by(species) %>% mutate(N=n_distinct(species)) %>% group_by(species) %>% summarize(N=sum(N)) %>% arrange(desc(N))
 # sum(SppList$N)
 # summarize(count(species))(N=count(species)) %>% arrange(N) 
 # SppList<-distinct(SppList)
@@ -467,10 +553,10 @@ str(VEG_both)
 
 
 # #Remove the NA
-#  VEG_both_summary<-na.omit(VEG_both)
-#  VEG_both_summary<-as.data.frame(VEG_both_summary)
-#  summary(VEG_both_summary)
-#  str(VEG_both_summary)
+#  veg_data_summary<-na.omit(veg_data)
+#  veg_data_summary<-as.data.frame(veg_data_summary)
+#  summary(veg_data_summary)
+#  str(veg_data_summary)
 
 # can test with this: if it works, and gives you groups, then all is good. if not restart
 # iris %>%
@@ -479,7 +565,7 @@ str(VEG_both)
 
 # Hacking my way around to count how many seedlings in each plot
 # CORRECT WAY: 
-# A<-na.omit(VEG_both)
+# A<-na.omit(veg_data)
 # B<-select(A, nest, location, species)
 # count.df<-A %>%
 #   group_by(nest, location) %>%
@@ -492,37 +578,49 @@ str(VEG_both)
 # As an alternative, I will include plot.id, group, and count. This gives you the number of plots in your dataframe (with each plant having 
 # its associated plot in the long form table.  You then convert all 1 to 0 -> plots with no plants were counted as a single row
 # with an NA in it.  Ugly, but works
-select <- dplyr::select
-count.df<-select(VEG_both,nest,location,spp.code,plot.id)
-count.df<-na.omit(count.df)
-count.df<-count.df %>%  group_by(nest, location) %>% dplyr::summarise(sdlg.no = n()) %>% ungroup()
-dim(count.df)
+# select <- dplyr::select
+# count.df<-select(veg_data,nest,location,spp.code,plot.id)
+# count.df<-na.omit(count.df)
+# count.df<-count.df %>%  group_by(nest, location) %>% dplyr::summarise(sdlg.no = n()) %>% ungroup()
+# dim(count.df)
 
-spp.no.df<-select(VEG_both,nest,location,spp.code,plot.id)
-spp.no.df<-na.omit(spp.no.df)
-spp.no.df<-spp.no.df %>%  group_by(nest, location) %>% dplyr::summarise(spp.no = n_distinct(spp.code)) %>% ungroup()
-dim(spp.no.df)
+count.df<-avg_per_plot
 
+# spp.no.df<-select(veg_data,nest,location,spp.code,plot.id)
+# spp.no.df<-na.omit(spp.no.df)
+# spp.no.df<-spp.no.df %>%  group_by(nest, location) %>% dplyr::summarise(spp.no = n_distinct(spp.code)) %>% ungroup()
+
+str(count.df)
+str(spp.no.df)
 sdlgs<-full_join(count.df,spp.no.df, by=c("nest","location"))
 dim(sdlgs)
+sdlgs<-sdlgs %>% dplyr::rename(habitat=habitat.x, plot.id=plot.id.x,sdlg.no=N,spp.no=spp_N) %>% dplyr::select(-habitat.y,-plot.id.y)
 
 
-all.plots.df<-select(VEG_both,nest,location,plot.id) %>% group_by(nest, location,plot.id) %>% dplyr::summarise(sdlg.no = n()) %>% select(-sdlg.no) %>% ungroup()
-dim(all.plots.df)
-sdlgs<-full_join(all.plots.df,sdlgs, by=c("nest", "location"))
-dim(sdlgs)
+# all.plots.df<-select(veg_data,nest,location,plot.id) %>% group_by(nest, location,plot.id) %>% dplyr::summarise(sdlg.no = n()) %>% select(-sdlg.no) %>% ungroup()
+# dim(all.plots.df)
+# sdlgs<-full_join(all.plots.df,sdlgs, by=c("nest", "location"))
+# dim(sdlgs)
+# 
+# dim(nest_data) 
 
-dim(NEST.DATA.both) 
 
 
 # BIND THEM UP....add % cover and nest area!!!
-sdlgs.perc.cover<-select(NEST.DATA.both, plot.id, nest, location,perc.cover, nest.area)
+sdlgs.perc.cover<-dplyr::select(nest_data, plot.id, nest, location,perc.cover, nest.area)
+sdlgs.perc.cover<-na.omit(sdlgs.perc.cover)
 dim(sdlgs.perc.cover) #make sure same size as sdlgs dataframe
-sdlgs<-full_join(sdlgs.perc.cover,sdlgs, by = "plot.id") %>% arrange(plot.id,nest.x,location.x) %>% select(-nest.y,-location.y) 
+sdlgs.perc.cover$plot.id<-as.factor(sdlgs.perc.cover$plot.id)
+sdlgs$plot.id<-as.factor(sdlgs$plot.id)
+sdlgs<-full_join(sdlgs.perc.cover,sdlgs, by = "plot.id") %>% arrange(plot.id,nest.x,location.x) 
 sdlgs<-dplyr::rename(sdlgs,nest=nest.x,location=location.x)
+sdlgs<-sdlgs %>% dplyr::select(-nest.y,-location.y) 
 #replace any NA in col of sdlg count with zero (those are true zeros)
-sdlgs$sdlg.no[is.na(sdlgs$sdlg.no)] <- 0
-sdlgs$spp.no[is.na(sdlgs$spp.no)] <- 0
+# sdlgs$sdlg.no[is.na(sdlgs$sdlg.no)] <- 0
+# sdlgs$spp.no[is.na(sdlgs$spp.no)] <- 0
+
+
+
 
 # Still need?
 # sdlgs<-na.omit(sdlgs)
@@ -539,8 +637,9 @@ str(GLM.DATA.nosoil)
 # WILL USE THE FOLLOWING TO DO GLMS W/ NO SOILS IN PCA (i.e., larger sample size)
 sdlgs<-arrange(sdlgs,nest,location)
 GLM.DATA.nosoil<-arrange(GLM.DATA.nosoil,nest.nosoil,location.nosoil)
-GLM.DATA.nosoil<-dplyr::rename(GLM.DATA.nosoil,nest=nest.nosoil,location=location.nosoil)
-sdlgs.nosoil<-inner_join(sdlgs,GLM.DATA.nosoil,by=c("nest","location"))
+
+sdlgs.nosoil<-inner_join(GLM.DATA.nosoil,sdlgs,by=c("nest","location"))
+sdlgs.nosoil$perc.cover<-NULL
 # 
 # sdlgs.nosoil<-cbind(sdlgs, GLM.DATA.nosoil)
 # sdlgs.nosoil$nest.nosoil<-NULL
@@ -552,12 +651,16 @@ dim(sdlgs.nosoil)
 # WILL USE THE FOLLOWING TO DO GLMS ***WITH*** SOILS IN PCA (i.e., larger sample size)
 sdlgswithsoil<-filter(sdlgs, location =="far" | location == "nest")
 # clean up column names and sort to do join of two dataframes of different sizes
-sdlgswithsoil$plot.id<-NULL
-sdlgswithsoil<-inner_join(sdlgswithsoil,GLM.DATAwithsoil, by = c("nest" = "nestwithsoil","location" = "locationwithsoil"))
+# sdlgswithsoil$plot.id<-NULL
+sdlgswithsoil$plot.id<-as.factor(sdlgswithsoil$plot.id)
+GLM.DATAwithsoil$plot.id<-as.factor(GLM.DATAwithsoil$plot.id)
+sdlgswithsoil<-full_join(sdlgswithsoil,GLM.DATAwithsoil, by = "plot.id")
+sdlgswithsoil<-na.omit(sdlgswithsoil)
 #NOW CHABGE NAMES BACK TO SIMPOLIFY THE ANALYSES BELOW
 sdlgswithsoil$coverwithsoil<-NULL
-sdlgswithsoil<-dplyr::rename(sdlgswithsoil, cover=perc.cover)
-
+names(sdlgswithsoil)[10]<-"cover2" #rename the column
+sdlgswithsoil<-dplyr::rename(sdlgswithsoil, location=location.x, cover=perc.cover)
+sdlgswithsoil<-dplyr::select(sdlgswithsoil, -location.y, -cover2)
 
 ############################################################################################################
 ##
@@ -568,54 +671,53 @@ sdlgswithsoil<-dplyr::rename(sdlgswithsoil, cover=perc.cover)
 #############
  
 # Testing for correlation between canopy cover and axis scores of NO SOIL PCA 
-DATA2<-droplevels(na.omit(sdlgs.nosoil))
+# DATA2<-droplevels(na.omit(sdlgs.nosoil))
+sdlgs.nosoil$location<-factor(sdlgs.nosoil$location, levels=c("nest","adjacent", "far"), ordered=TRUE)
+# DATA2<-dplyr::rename(DATA2,perc.cover=cover.nosoils)
 #DATA3<-DATA2[!DATA2$location %in% c("adjacent"),] 
-cor.test(DATA2$perc.cover,DATA2$PCA1.nosoil)
-cor.test(DATA2$perc.cover,DATA2$PCA2.nosoil)
+cor.test(sdlgs.nosoil$cover,sdlgs.nosoil$PCA1.nosoil)
+cor.test(sdlgs.nosoil$cover,sdlgs.nosoil$PCA2.nosoil)
+
 
 ############################################################################################################
-# ANALYSES: GLMM ENVTL CONDITIONS IN PLOT using PCA NO SOIL
+### TABLE 4: GLMM: proximity to ant nests on environbmental conditions (PCA NO SOILS DATA)
 ############################################################################################################
 
-RESPONSE<-DATA2$PCA1.nosoil
-COVARIATE<-DATA2$perc.cover
-COVARIATE2<-DATA2$nest.area
-FIXED<-DATA2$location
+
 # Nest identity is a random effect RANDOM<-(1|nest)
 
-
 #DOES INCLUDING COVARIATE 2 HELP?
-pcaNOSOIL.covariate2<-lmer(RESPONSE ~ COVARIATE2 + (1|nest), data = DATA2)
-summary(pcaNOSOIL.covariate2)
-pcaNOSOIL.nest<-lmer(RESPONSE ~  (1|nest), data = DATA2)
+pcaNOSOIL.nest<-lmer(PCA1.nosoil ~  (1|nest), data = sdlgs.nosoil)
 summary(pcaNOSOIL.nest)
-AIC(pcaNOSOIL.covariate2, pcaNOSOIL.nest) #mnodel with nest best fit than nest area
-anova(pcaNOSOIL.covariate2, pcaNOSOIL.nest, test = "Chisq")
-#NO!!! 
+pcaNOSOIL.cover<-lmer(PCA1.nosoil ~ cover + (1|nest), data = sdlgs.nosoil)
+summary(pcaNOSOIL.cover)
+AIC(pcaNOSOIL.nest,pcaNOSOIL.cover) #mnodel with nest best fit than nest area
+anova(pcaNOSOIL.nest, pcaNOSOIL.cover, test = "Chisq")
+#YES!!! 
 
 # Nest identity is a random effect RANDOM<-(1|nest)
 # random effect only
-pcaNOSOIL.1<-lmer(RESPONSE ~ (1|nest), data = DATA2)
+pcaNOSOIL.1<-lmer(PCA1.nosoil ~ (1|nest), data = sdlgs.nosoil)
 summary(pcaNOSOIL.1)
 # effect of location + random
-pcaNOSOIL.2<-lmer(RESPONSE ~ FIXED + (1|nest), data = DATA2)
+pcaNOSOIL.2<-lmer(PCA1.nosoil ~ location + (1|nest), data = sdlgs.nosoil)
 summary(pcaNOSOIL.2)
 # effect of cover + random
-pcaNOSOIL.3<-lmer(RESPONSE ~ COVARIATE + (1|nest), data = DATA2)
+pcaNOSOIL.3<-lmer(PCA1.nosoil ~ cover + (1|nest), data = sdlgs.nosoil)
 summary(pcaNOSOIL.3)
 #effect of both + random (no interaction)
-pcaNOSOIL.4<-lmer(RESPONSE ~ FIXED + COVARIATE + (1|nest), data = DATA2)
+pcaNOSOIL.4<-lmer(PCA1.nosoil ~ location + cover + (1|nest), data = sdlgs.nosoil)
 summary(pcaNOSOIL.4)
 #effect of both, their interaction,and random
-pcaNOSOIL.5<-lmer(RESPONSE ~ FIXED * COVARIATE + (1|nest), data = DATA2)
+pcaNOSOIL.5<-lmer(PCA1.nosoil ~ location * cover + (1|nest), data = sdlgs.nosoil)
 summary(pcaNOSOIL.5)
-# pcaNOSOIL.6<-lmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + (1|nest), data = DATA2)
+# pcaNOSOIL.6<-lmer(PCA1.nosoil ~ location + cover + nest.area + (1|nest), data = sdlgs.nosoil)
 # summary(pcaNOSOIL.6)
-# pcaNOSOIL.6<-lmer(RESPONSE ~ FIXED * COVARIATE + COVARIATE2 + (1|nest), data = DATA2)
+# pcaNOSOIL.6<-lmer(PCA1.nosoil ~ location * cover + nest.area + (1|nest), data = sdlgs.nosoil)
 # summary(pcaNOSOIL.6)
-# pcaNOSOIL.7<-lmer(RESPONSE ~ FIXED * COVARIATE * COVARIATE2 + (1|nest), data = DATA2)
+# pcaNOSOIL.7<-lmer(PCA1.nosoil ~ location * cover * nest.area + (1|nest), data = sdlgs.nosoil)
 # summary(pcaNOSOIL.7)
-# pcaNOSOIL.8<-lmer(RESPONSE ~ FIXED + COVARIATE2 * COVARIATE + (1|nest), data = DATA2)
+# pcaNOSOIL.8<-lmer(PCA1.nosoil ~ location + cover * nest.area + (1|nest), data = sdlgs.nosoil)
 # summary(pcaNOSOIL.8)
 
 
@@ -640,69 +742,62 @@ reported.table.pcaNOSOIL[['wAIC']] <- with(reported.table.pcaNOSOIL, exp(- 0.5 *
 reported.table.pcaNOSOIL$AIC <- NULL
 reported.table.pcaNOSOIL <- reported.table.pcaNOSOIL[order(reported.table.pcaNOSOIL$dAIC),]
 reported.table.pcaNOSOIL
-############################################################################################################
-### TABLE 4: GLMM: proximity to ant nests on environbmental conditions (PCA NO SOILS DATA)
-############################################################################################################
-reported.table.pcaNOSOIL
 write.csv(reported.table.pcaNOSOIL, file="./Output/Table4_NO SOIL.csv", row.names = F) #export it as a csv file
 
 
 
 
 
+
 ############################################################################################################
-# ANALYSES: GLMM ENVTL CONDITIONS IN PLOT using PCA WITH SOIL 
+### TABLE 5: GLMM: proximity to ant nests on environbmental conditions (WITH SOILS DATA)
 ############################################################################################################
+
 
 # Testing for correlation between canopy cover and PCA axis scores
-DATA<-droplevels(na.omit(sdlgswithsoil))
-cor.test(DATA$cover,DATA$PCA1withsoil)
-cor.test(DATA$cover,DATA$PCA2withsoil)
-
-
+sdlgswithsoil<-droplevels(na.omit(sdlgswithsoil))
+cor.test(sdlgswithsoil$cover,sdlgswithsoil$PCA1withsoil)
+cor.test(sdlgswithsoil$cover,sdlgswithsoil$PCA2withsoil)
 
 
 # analyses
-DATA<-droplevels(na.omit(sdlgswithsoil))
 
-COVARIATE<-DATA$cover
-COVARIATE2<-DATA$nest.area
-RESPONSE<-DATA$PCA1withsoil
-FIXED<-DATA$location
+RESPONSE<-sdlgswithsoil$PCA1withsoil
+FIXED<-sdlgswithsoil$location
 #DOES INCLUDING NEST AREA IMPROVE THE FIT OVER JUST random effect of NEST?
-pcaWITHSOIL.nest<-lmer(RESPONSE ~  (1|nest), data = DATA)
+pcaWITHSOIL.nest<-lmer(RESPONSE ~  (1|nest), data = sdlgswithsoil)
 summary(pcaWITHSOIL.nest)
 
 
-pcaWITHSOIL.covariate<-lmer(RESPONSE ~ COVARIATE + (1|nest), data = DATA)
-summary(pcaWITHSOIL.covariate)
+pcaWITHSOIL.cover<-lmer(RESPONSE ~ cover + (1|nest), data = sdlgswithsoil)
+summary(pcaWITHSOIL.cover)
 
-pcaWITHSOIL.covariate2<-lmer(RESPONSE ~ COVARIATE2 + (1|nest), data = DATA)
-summary(pcaWITHSOIL.covariate2)
+pcaWITHSOIL.nestarea<-lmer(RESPONSE ~ nest.area + (1|nest), data = sdlgswithsoil)
+summary(pcaWITHSOIL.nestarea)
 
-AIC(pcaWITHSOIL.nest, pcaWITHSOIL.covariate, pcaWITHSOIL.covariate2)
+AIC(pcaWITHSOIL.nest, pcaWITHSOIL.cover, pcaWITHSOIL.nestarea)
 
-anova(pcaWITHSOIL.covariate,pcaWITHSOIL.nest, test = "Chisq")
-anova(pcaWITHSOIL.covariate2,pcaWITHSOIL.nest, test = "Chisq")
-anova(pcaWITHSOIL.covariate, pcaWITHSOIL.covariate2,pcaWITHSOIL.nest, test = "Chisq")
+anova(pcaWITHSOIL.cover,pcaWITHSOIL.nest, test = "Chisq")
+anova(pcaWITHSOIL.nestarea,pcaWITHSOIL.nest, test = "Chisq")
+anova(pcaWITHSOIL.cover, pcaWITHSOIL.nestarea,pcaWITHSOIL.nest, test = "Chisq")
 #NO, SO DON't INCLUDE
 
 # Nest identity is a random effect RANDOM<-(1|nest)
-pcaWITHSOIL.1<-lmer(RESPONSE ~   (1|nest), data = DATA)
+pcaWITHSOIL.1<-lmer(RESPONSE ~   (1|nest), data = sdlgswithsoil)
 summary(pcaWITHSOIL.1)
-pcaWITHSOIL.2<-lmer(RESPONSE ~ FIXED + (1|nest), data = DATA)
+pcaWITHSOIL.2<-lmer(RESPONSE ~ FIXED + (1|nest), data = sdlgswithsoil)
 summary(pcaWITHSOIL.2)
-pcaWITHSOIL.3<-lmer(RESPONSE ~ COVARIATE + (1|nest), data = DATA)
+pcaWITHSOIL.3<-lmer(RESPONSE ~ cover + (1|nest), data = sdlgswithsoil)
 summary(pcaWITHSOIL.3)
-pcaWITHSOIL.4<-lmer(RESPONSE ~ FIXED + COVARIATE + (1|nest), data = DATA)
+pcaWITHSOIL.4<-lmer(RESPONSE ~ FIXED + cover + (1|nest), data = sdlgswithsoil)
 summary(pcaWITHSOIL.4)
-pcaWITHSOIL.5<-lmer(RESPONSE ~ FIXED * COVARIATE + (1|nest), data = DATA)
+pcaWITHSOIL.5<-lmer(RESPONSE ~ FIXED * cover + (1|nest), data = sdlgswithsoil)
 summary(pcaWITHSOIL.5)
-# pcaWITHSOIL.6<-lmer(RESPONSE ~ FIXED + COVARIATE +  COVARIATE2 + (1|nest), data = DATA)
+# pcaWITHSOIL.6<-lmer(RESPONSE ~ FIXED + cover +  nest.area + (1|nest), data = sdlgswithsoil)
 # summary(pcaWITHSOIL.6)
-# pcaWITHSOIL.7<-lmer(RESPONSE ~ FIXED * COVARIATE *  COVARIATE2 + (1|nest), data = DATA)
+# pcaWITHSOIL.7<-lmer(RESPONSE ~ FIXED * cover *  nest.area + (1|nest), data = sdlgswithsoil)
 # summary(pcaWITHSOIL.7)
-# pcaWITHSOIL.8<-lmer(RESPONSE ~ FIXED + COVARIATE2 *  COVARIATE + (1|nest), data = DATA)
+# pcaWITHSOIL.8<-lmer(RESPONSE ~ FIXED + nest.area *  cover + (1|nest), data = sdlgswithsoil)
 # summary(pcaWITHSOIL.8)
 
 AIC(pcaWITHSOIL.5,pcaWITHSOIL.4,pcaWITHSOIL.3,pcaWITHSOIL.2, pcaWITHSOIL.1) #pcaWITHSOIL.8,pcaWITHSOIL.7,pcaWITHSOIL.6,
@@ -725,12 +820,6 @@ reported.table.pcaWITHSOIL[['dAIC']] <-  with(reported.table.pcaWITHSOIL, AIC - 
 reported.table.pcaWITHSOIL[['wAIC']] <- with(reported.table.pcaWITHSOIL, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
 reported.table.pcaWITHSOIL$AIC <- NULL
 reported.table.pcaWITHSOIL <- reported.table.pcaWITHSOIL[order(reported.table.pcaWITHSOIL$dAIC),]
-reported.table.pcaWITHSOIL
-
-############################################################################################################
-### TABLE 5: GLMM: proximity to ant nests on environbmental conditions (WITH SOILS DATA)
-############################################################################################################
-
 reported.table.pcaWITHSOIL 
 write.csv(reported.table.pcaWITHSOIL, file="./Output/Table5_PCAWITHSOIL_TABLE5.csv", row.names = F) #export it as a csv file
 
@@ -753,20 +842,35 @@ write.csv(reported.table.pcaWITHSOIL, file="./Output/Table5_PCAWITHSOIL_TABLE5.c
 
 
 ############################################################################################################
-# SEEDLING NUMBER AND SPECIES RICHNESS  VS PCA NO SOIL TABLE 6A SEEDLING NUMBER
+# SEEDLING NUMBER OR SPECIES RICHNESS VS PCA **NO SOIL** TABLE 6A+B 
 ############################################################################################################
+# 
+# DATA<-sdlgs.nosoil
+# # PCA AXIS 1 or 2? 
+# PCA<-DATA$PCA1.nosoil
+# # PCA<-DATA$PCA2.nosoil
+# 
+# # Seedling No or Spp richness?
+# RESPONSE<-sdlgs.nosoil$sdlg.no
+# # RESPONSE<-DATA$spp.no
+# # WHAT FIXED (main) EFFECT? 
+# FIXED<-DATA$location #Plot location: on nests, adjacent to nests, or far from nests
 
-COVARIATE<-DATA$PCA1.nosoil
-COVARIATE2<-DATA$perc.cover
-COVARIATE3<-DATA$nest.area
-DATA<-droplevels(na.omit(sdlgs.nosoil))
-RESPONSE<-DATA$sdlg.no  
 
-###################################
-# WHAT FIXED (main) EFFECT? 
-###################################
-#Plot location: on nests, adjacent to nests, or far from nests
-FIXED<-DATA$location
+############################################################################################################
+# SEEDLING NUMBER OR SPECIES RICHNESS VS PCA **WITH SOIL** TABLE 7A+B 
+############################################################################################################
+DATA<-sdlgswithsoil
+# # PCA AXIS 1 or 2?
+PCA<-DATA$PCA1withsoil
+# # # PCA<-DATA$PCA2withsoil
+# 
+# # Seedling No or Spp richness?
+RESPONSE<-DATA$sdlg.no
+# RESPONSE<-DATA$spp.no
+
+# # WHAT FIXED (main) EFFECT? 
+FIXED<-DATA$location #Plot location: on nests, adjacent to nests, or far from nests
 
 ###################################
 # OTHER
@@ -776,7 +880,7 @@ FIXED<-DATA$location
 # may have to use quasi-poisson die to overdispersion
 
 #DOES IT HELP TO INCLUDE NEST AREA?
-global.cov3<-glmer(RESPONSE ~ COVARIATE3 + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+global.cov3<-glmer(RESPONSE ~ nest.area + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
 summary(global.cov3)
 
 global.nest<-glmer(RESPONSE ~  (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
@@ -784,9 +888,20 @@ summary(global.nest)
 
 AIC(global.cov3,global.nest)
 anova(global.cov3,global.nest, test = "Chisq")
-# DELTA AIC IS SO SMALL, LETS INCLUDE
 
-global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+global.cov3.1<-glmer(RESPONSE ~ PCA + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(global.cov3.1)
+anova(global.cov3.1,global.nest, test = "Chisq")
+
+global.cov3.2<-glmer(RESPONSE ~ cover + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(global.cov3.2)
+anova(global.cov3.2,global.nest, test = "Chisq")
+
+AIC(global.cov3,global.cov3.1,global.cov3.2,global.nest)
+
+# including nest area, cover, and pca (indiv) improves fit over random 
+
+global.model<-glmer(RESPONSE ~ FIXED + PCA + cover + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
 summary(global.model)
 
 
@@ -805,8 +920,8 @@ rdev/rdf
 (prob.disp <- pchisq(rdev,rdf,lower.tail=FALSE,log.p=TRUE)) #This is a log probability, so if result was  -868.796 could correspond to p ≈ 10−377.)
 # Here (with a hacked version of lme4 that allows per-observation random effects, i.e. a Poisson-lognormal distribution):
 DATA$obs <- 1:nrow(DATA) ## add observation number to data
-global.model.2 <- glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-# global.model.2 <- glmer(sdlg.no ~ location + PCA1.nosoil + perc.cover + nest.area + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
+# global.model.2 <- glmer(RESPONSE ~ FIXED + PCA + cover + nest.area + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
+global.model.2 <- glmer(RESPONSE ~ FIXED + PCA + cover + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
 
 print(summary(global.model.2))
 
@@ -817,29 +932,29 @@ top.models<-get.models(model.set, subset=delta<2)
 summary(top.models)
 
 
-#random effects 
-global.model1 <- glmer(RESPONSE ~  (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-summary(global.model1)
-# gradient + random
-global.model2 <- glmer(RESPONSE ~ COVARIATE2 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-summary(global.model2)
-# ant-related + random FOR PCA2
-# global.model3<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-# summary(global.model3)
-# BOTH of gradient and ant FOR PCA2
-# global.model4<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-# summary(global.model4)
 
-# ant-related + random FOR PCA1
-global.model3<-glmer(RESPONSE ~ FIXED +  COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+#random effects 
+global.model1 <- glmer(RESPONSE ~ FIXED + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
+summary(global.model1)
+# cover gradient + random
+global.model2 <- glmer(RESPONSE ~ FIXED + cover + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
+summary(global.model2)
+anova(global.model1,global.model2, test = "Chisq")
+# ant-related + random
+global.model3<-glmer(RESPONSE ~ FIXED + PCA + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
 summary(global.model3)
-# BOTH of gradient and ant for PCA!
-global.model4<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+# BOTH of gradient and ant
+global.model4<-glmer(RESPONSE ~ FIXED + PCA + cover + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
 summary(global.model4)
+# INTERACTON of gradient and ant
+global.model5<-glmer(RESPONSE ~ FIXED + PCA * cover + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
+summary(global.model5)
+
+
 
 # Nest identity is a random effect RANDOM<-(1|nest)
-AIC(global.model1,global.model2,global.model3,global.model4)
-anova(global.model1,global.model2,global.model3,global.model4, test = "Chisq")
+AIC(global.model1,global.model2,global.model3,global.model4,global.model5)
+anova(global.model1,global.model2,global.model3,global.model4,global.model5, test = "Chisq")
 
 # 1: random effects 
 # 2: gradient + random
@@ -847,368 +962,35 @@ anova(global.model1,global.model2,global.model3,global.model4, test = "Chisq")
 # 4: Interaction of gradient and ant
 
 # see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
-summary.table.global <- do.call(rbind, lapply(list(global.model1,global.model2,global.model3,global.model4), broom::glance))
-summary.table.global[["model"]] <- 1:4
+summary.table.global <- do.call(rbind, lapply(list(global.model1,global.model2,global.model3,global.model4,global.model5), broom::glance))
+summary.table.global[["model"]] <- 1:5
 table.cols <- c("model", "df.residual", "deviance", "AIC")
 reported.table.global <- summary.table.global[table.cols]
 names(reported.table.global) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
 reported.table.global[['dAIC']] <-  with(reported.table.global, AIC - min(AIC))
 reported.table.global[['wAIC']] <- with(reported.table.global, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
 reported.table.global$AIC <- NULL
-reported.table.global6A <- reported.table.global[order(reported.table.global$dAIC),]
-round (reported.table.global6A, digits = 4)
+reported.table.global6 <- reported.table.global[order(reported.table.global$dAIC),]
+round (reported.table.global6, digits = 4)
 
 # TABLE 6A
-reported.table.global6A
+reported.table.global6
 ############################################################################################################
-### TABLE 6: Seedling abundance and richness vs PCA NO SOILS
+### TABLE 6A: Seedling abundance  vs PCA NO SOILS
 ############################################################################################################
-write.csv(reported.table.global6A, file="./Output/global_6A.csv", row.names = F) #export it as a csv file
+write.csv(reported.table.global6, file="./Output/global_6A.csv", row.names = F) #export it as a csv file
 
-
-
+# TABLE 6B: Seedling  richness vs PCA NO SOILS
 ############################################################################################################
-# SEEDLING NUMBER AND SPECIES RICHNESS  VS PCA NO SOIL TABLE 6B SPECIES NUMBER
+write.csv(reported.table.global6, file="./Output/global_6B.csv", row.names = F) #export it as a csv file
+
+### TABLE 7A: Seedling abundance  vs PCA WITH SOILS
 ############################################################################################################
+write.csv(reported.table.global6, file="./Output/global_7A.csv", row.names = F) #export it as a csv file
 
-COVARIATE<-DATA$PCA1.nosoil
-COVARIATE2<-DATA$perc.cover
-COVARIATE3<-DATA$nest.area
-DATA<-droplevels(na.omit(sdlgs.nosoil))
-RESPONSE<-DATA$spp.no
-
-
-###################################
-# WHAT FIXED (main) EFFECT? 
-###################################
-#Plot location: on nests, adjacent to nests, or far from nests
-FIXED<-DATA$location
-
-###################################
-# OTHER
-###################################
-# Nest identity is a random effect RANDOM<-(1|nest)
-# distribution family: poisson for starters because both are counts
-# may have to use quasi-poisson die to overdispersion
-
-#DOES IT HELP TO INCLUDE NEST AREA?
-global.cov3<-glmer(RESPONSE ~ COVARIATE3 + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.cov3)
-
-global.nest<-glmer(RESPONSE ~  (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.nest)
-
-AIC(global.cov3,global.nest)
-anova(global.cov3,global.nest, test = "Chisq")
-# DELTA AIC IS SO SMALL, LETS INCLUDE
-
-global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model)
-
-
-
-# testing for overdipsersion: http://glmm.wikidot.com/faq, Section "How can I deal with overdispersion in GLMMs?"
-source("overdisp_fun.R")
-overdisp_fun(global.model)
-
-# #from http://glmm.wdfiles.com/local--files/examples/Owls.pdf
-# Check for overdispersion (Pearson residuals):
-rdev <- sum(residuals(global.model)^2)
-mdf <- length(fixef(global.model))
-rdf <- length(unique(DATA$nest))-mdf ## residual df [NOT accounting for random effects]
-rdev/rdf
-# #Overdispersion is quite a bit if > 1 . . . significance test:
-(prob.disp <- pchisq(rdev,rdf,lower.tail=FALSE,log.p=TRUE)) #This is a log probability, so if result was  -868.796 could correspond to p ≈ 10−377.)
-# Here (with a hacked version of lme4 that allows per-observation random effects, i.e. a Poisson-lognormal distribution):
-DATA$obs <- 1:nrow(DATA) ## add observation number to data
-global.model.2 <- glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-print(summary(global.model.2))
-
-# stdz.model<-standardize(global.model, standardize.y=FALSE)
-# model.set<-dredge(stdz.model)
-model.set<-dredge(global.model.2)
-top.models<-get.models(model.set, subset=delta<2)
-summary(top.models)
-
-
-#random effects 
-global.model1 <- glmer(RESPONSE ~  (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-summary(global.model1)
-# gradient + random
-global.model2 <- glmer(RESPONSE ~ COVARIATE2 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-summary(global.model2)
-# ant-related + random FOR PCA2
-# global.model3<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-# summary(global.model3)
-# BOTH of gradient and ant FOR PCA2
-# global.model4<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-# summary(global.model4)
-
-# ant-related + random FOR PCA1
-global.model3<-glmer(RESPONSE ~ FIXED +  COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model3)
-# BOTH of gradient and ant for PCA!
-global.model4<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model4)
-
-# Nest identity is a random effect RANDOM<-(1|nest)
-AIC(global.model1,global.model2,global.model3,global.model4)
-anova(global.model1,global.model2,global.model3,global.model4, test = "Chisq")
-
-# 1: random effects 
-# 2: gradient + random
-# 3: ant-related + random
-# 4: Interaction of gradient and ant
-
-# see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
-summary.table.global <- do.call(rbind, lapply(list(global.model1,global.model2,global.model3,global.model4), broom::glance))
-summary.table.global[["model"]] <- 1:4
-table.cols <- c("model", "df.residual", "deviance", "AIC")
-reported.table.global <- summary.table.global[table.cols]
-names(reported.table.global) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
-reported.table.global[['dAIC']] <-  with(reported.table.global, AIC - min(AIC))
-reported.table.global[['wAIC']] <- with(reported.table.global, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
-reported.table.global$AIC <- NULL
-reported.table.global6B <- reported.table.global[order(reported.table.global$dAIC),]
-round (reported.table.global6B, digits = 4)
-
-# TABLE 6B
-reported.table.global6B
+### TABLE 7B: Seedling richness vs PCA WITH SOILS
 ############################################################################################################
-### TABLE 6: Seedling abundance and richness vs PCA NO SOILS
-############################################################################################################
-write.csv(reported.table.global6B, file="./Output/global_6B.csv", row.names = F) #export it as a csv file
-
-
-
-
-############################################################################################################
-# SEEDLING NUMBER AND SPECIES RICHNESS  VS PCA WITH SOIL TABLE 7A
-############################################################################################################
-# If you are using all the biotic and abiotic data collected for the PCA then you are using sdlgswithsoil BUT
-# # this dataset only includes plot ON or AWAY from nests
-DATA<-droplevels(na.omit(sdlgswithsoil))
-COVARIATE<-DATA$PCA1withsoil
-COVARIATE2<-DATA$cover
-COVARIATE3<-DATA$nest.area
-RESPONSE<-DATA$sdlg.no  
-
-
-###################################
-# WHAT FIXED (main) EFFECT? 
-###################################
-#Plot location: on nests, adjacent to nests, or far from nests
-FIXED<-DATA$location
-
-###################################
-# OTHER
-###################################
-# Nest identity is a random effect RANDOM<-(1|nest)
-# distribution family: poisson for starters because both are counts
-# may have to use quasi-poisson die to overdispersion
-
-#DOES IT HELP TO INCLUDE NEST AREA?
-global.cov3<-glmer(RESPONSE ~ COVARIATE3 + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.cov3)
-
-global.nest<-glmer(RESPONSE ~  (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.nest)
-
-AIC(global.cov3,global.nest)
-anova(global.cov3,global.nest, test = "Chisq")
-# DELTA AIC IS SO SMALL, LETS INCLUDE
-
-global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model)
-
-
-
-# testing for overdipsersion: http://glmm.wikidot.com/faq, Section "How can I deal with overdispersion in GLMMs?"
-source("overdisp_fun.R")
-overdisp_fun(global.model)
-
-# #from http://glmm.wdfiles.com/local--files/examples/Owls.pdf
-# Check for overdispersion (Pearson residuals):
-rdev <- sum(residuals(global.model)^2)
-mdf <- length(fixef(global.model))
-rdf <- length(unique(DATA$nest))-mdf ## residual df [NOT accounting for random effects]
-rdev/rdf
-# #Overdispersion is quite a bit if > 1 . . . significance test:
-(prob.disp <- pchisq(rdev,rdf,lower.tail=FALSE,log.p=TRUE)) #This is a log probability, so if result was  -868.796 could correspond to p ≈ 10−377.)
-# Here (with a hacked version of lme4 that allows per-observation random effects, i.e. a Poisson-lognormal distribution):
-DATA$obs <- 1:nrow(DATA) ## add observation number to data
-global.model.2 <- glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-print(summary(global.model.2))
-
-# stdz.model<-standardize(global.model, standardize.y=FALSE)
-# model.set<-dredge(stdz.model)
-model.set<-dredge(global.model.2)
-top.models<-get.models(model.set, subset=delta<2)
-summary(top.models)
-
-
-#random effects 
-global.model1 <- glmer(RESPONSE ~  (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-summary(global.model1)
-# gradient + random
-global.model2 <- glmer(RESPONSE ~ COVARIATE2 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-summary(global.model2)
-# ant-related + random FOR PCA2
-# global.model3<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-# summary(global.model3)
-# BOTH of gradient and ant FOR PCA2
-# global.model4<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-# summary(global.model4)
-
-# ant-related + random FOR PCA1
-global.model3<-glmer(RESPONSE ~ FIXED +  COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model3)
-# BOTH of gradient and ant for PCA!
-global.model4<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model4)
-
-# Nest identity is a random effect RANDOM<-(1|nest)
-AIC(global.model1,global.model2,global.model3,global.model4)
-anova(global.model1,global.model2,global.model3,global.model4, test = "Chisq")
-
-# 1: random effects 
-# 2: gradient + random
-# 3: ant-related + random
-# 4: Interaction of gradient and ant
-
-# see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
-summary.table.global <- do.call(rbind, lapply(list(global.model1,global.model2,global.model3,global.model4), broom::glance))
-summary.table.global[["model"]] <- 1:4
-table.cols <- c("model", "df.residual", "deviance", "AIC")
-reported.table.global <- summary.table.global[table.cols]
-names(reported.table.global) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
-reported.table.global[['dAIC']] <-  with(reported.table.global, AIC - min(AIC))
-reported.table.global[['wAIC']] <- with(reported.table.global, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
-reported.table.global$AIC <- NULL
-reported.table.global7A <- reported.table.global[order(reported.table.global$dAIC),]
-round (reported.table.global7A, digits = 4)
-
-# TABLE 7A
-reported.table.global7A
-
-############################################################################################################
-### TABLE 7: Seedling abundance and richness vs PCA WITH SOILS
-############################################################################################################
-write.csv(reported.table.global7A, file="./Output/global_7A.csv", row.names = F) #export it as a csv file
-
-
-
-############################################################################################################
-# SEEDLING RICHNESS ABUND VS PCA WITH SOIL TABLE 7B
-############################################################################################################
-# If you are using all the biotic and abiotic data collected for the PCA then you are using sdlgswithsoil BUT
-# # this dataset only includes plot ON or AWAY from nests
-DATA<-droplevels(na.omit(sdlgswithsoil))
-COVARIATE<-DATA$PCA1withsoil
-COVARIATE2<-DATA$cover
-COVARIATE3<-DATA$nest.area
-RESPONSE<-DATA$spp.no
-
-###################################
-# WHAT FIXED (main) EFFECT? 
-###################################
-#Plot location: on nests, adjacent to nests, or far from nests
-FIXED<-DATA$location
-
-###################################
-# OTHER
-###################################
-# Nest identity is a random effect RANDOM<-(1|nest)
-# distribution family: poisson for starters because both are counts
-# may have to use quasi-poisson die to overdispersion
-
-#DOES IT HELP TO INCLUDE NEST AREA?
-global.cov3<-glmer(RESPONSE ~ COVARIATE3 + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.cov3)
-
-global.nest<-glmer(RESPONSE ~  (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.nest)
-
-AIC(global.cov3,global.nest)
-anova(global.cov3,global.nest, test = "Chisq")
-# DELTA AIC IS SO SMALL, LETS INCLUDE
-
-global.model<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model)
-
-
-
-# testing for overdipsersion: http://glmm.wikidot.com/faq, Section "How can I deal with overdispersion in GLMMs?"
-source("overdisp_fun.R")
-overdisp_fun(global.model)
-
-# #from http://glmm.wdfiles.com/local--files/examples/Owls.pdf
-# Check for overdispersion (Pearson residuals):
-rdev <- sum(residuals(global.model)^2)
-mdf <- length(fixef(global.model))
-rdf <- length(unique(DATA$nest))-mdf ## residual df [NOT accounting for random effects]
-rdev/rdf
-# #Overdispersion is quite a bit if > 1 . . . significance test:
-(prob.disp <- pchisq(rdev,rdf,lower.tail=FALSE,log.p=TRUE)) #This is a log probability, so if result was  -868.796 could correspond to p ≈ 10−377.)
-# Here (with a hacked version of lme4 that allows per-observation random effects, i.e. a Poisson-lognormal distribution):
-DATA$obs <- 1:nrow(DATA) ## add observation number to data
-global.model.2 <- glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-print(summary(global.model.2))
-
-# stdz.model<-standardize(global.model, standardize.y=FALSE)
-# model.set<-dredge(stdz.model)
-model.set<-dredge(global.model.2)
-top.models<-get.models(model.set, subset=delta<2)
-summary(top.models)
-
-
-#random effects 
-global.model1 <- glmer(RESPONSE ~  (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-summary(global.model1)
-# gradient + random
-global.model2 <- glmer(RESPONSE ~ COVARIATE2 + (1|nest) + (1|obs), data = DATA,family=poisson, na.action = "na.fail")
-summary(global.model2)
-# ant-related + random FOR PCA2
-# global.model3<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-# summary(global.model3)
-# BOTH of gradient and ant FOR PCA2
-# global.model4<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-# summary(global.model4)
-
-# ant-related + random FOR PCA1
-global.model3<-glmer(RESPONSE ~ FIXED +  COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model3)
-# BOTH of gradient and ant for PCA!
-global.model4<-glmer(RESPONSE ~ FIXED + COVARIATE + COVARIATE2 + COVARIATE3 + (1|nest)+ (1|obs), data = DATA ,family=poisson, na.action = "na.fail", REML=FALSE)
-summary(global.model4)
-
-# Nest identity is a random effect RANDOM<-(1|nest)
-AIC(global.model1,global.model2,global.model3,global.model4)
-anova(global.model1,global.model2,global.model3,global.model4, test = "Chisq")
-
-# 1: random effects 
-# 2: gradient + random
-# 3: ant-related + random
-# 4: Interaction of gradient and ant
-
-# see http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/ for what to report
-summary.table.global <- do.call(rbind, lapply(list(global.model1,global.model2,global.model3,global.model4), broom::glance))
-summary.table.global[["model"]] <- 1:4
-table.cols <- c("model", "df.residual", "deviance", "AIC")
-reported.table.global <- summary.table.global[table.cols]
-names(reported.table.global) <- c("Model", "Resid. Df", "Resid. Dev", "AIC")
-reported.table.global[['dAIC']] <-  with(reported.table.global, AIC - min(AIC))
-reported.table.global[['wAIC']] <- with(reported.table.global, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
-reported.table.global$AIC <- NULL
-reported.table.global7B <- reported.table.global[order(reported.table.global$dAIC),]
-round (reported.table.global7B, digits = 4)
-
-# TABLE 7B
-reported.table.global7B
-############################################################################################################
-### TABLE 7: Seedling abundance and richness vs PCA WITH SOILS
-############################################################################################################
-write.csv(reported.table.global7B, file="./Output/global_7B.csv", row.names = F) #export it as a csv file
+write.csv(reported.table.global6, file="./Output/global_7B.csv", row.names = F) #export it as a csv file
 
 
 
@@ -1236,8 +1018,8 @@ write.csv(reported.table.global7B, file="./Output/global_7B.csv", row.names = F)
 ############################################################################################################
 ### FIG 1A: Histogram of Canopy Cover Gradient
 ############################################################################################################
-NEST.DATA.with.soilchem<-NEST.DATA.both
-cover.fig.gradient<-ggplot(NEST.DATA.with.soilchem, aes(x=perc.cover, fill=habitat)) +
+
+cover.fig.gradient<-ggplot(nest_data, aes(x=perc.cover, fill=habitat)) +
   geom_histogram(binwidth=10, alpha=.7, position="identity", colour="black")+
   scale_fill_grey(start=0.3, end=1, labels = c("Cerrado denso","Cerrado ralo"))+
   ylab("No. of plots") + 
@@ -1432,7 +1214,7 @@ ggsave("./Output/Fig2B.tif", g_soils, device = "tiff", scale = 1, width = NA, he
 # Figure 3A: PCA-NO-soils DATA vs. canopy cover 
 ############################################################################################################
 
-CoverEnvAll<-ggplot(DATA2, aes(x = perc.cover, y = PCA1.nosoil, col=location, shape=location,fill=location)) + 
+CoverEnvAll<-ggplot(DATA2, aes(x = cover, y = PCA1.nosoil, col=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
   scale_shape_manual(values=c(16,17,15))+
   guides(fill = guide_legend(override.aes = list(linetype = 0)))+
@@ -1595,7 +1377,7 @@ ggsave("./Output/Fig4_18aug.eps", plot = multiplot(canopy.sdlgs.fig1,canopy.sdlg
 # Fig 5A: PLOT OF SEEDLING ABUNDNACE VS canopy cover 
 ############################################################################################################
 
-canopy.sdlgs.fig5<-ggplot(sdlgs.nosoil, aes(x = perc.cover, y = sdlg.no, colour=location, shape=location, fill=location)) + 
+canopy.sdlgs.fig5<-ggplot(sdlgs.nosoil, aes(x = cover, y = sdlg.no, colour=location, shape=location, fill=location)) + 
   geom_point(size = 3) +
   scale_shape_manual(values=c(16,17,15))+  # Use a square circle and triangle
   scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
@@ -1629,7 +1411,7 @@ canopy.sdlgs.fig5
 # Fig 4B: PLOT OF SEEDLING RICHNESS VS canopy cover
 ############################################################################################################
 
-canopy.sdlgs.fig6<-ggplot(sdlgs.nosoil, aes(x = perc.cover , y = spp.no, colour=location, shape=location, fill=location)) + 
+canopy.sdlgs.fig6<-ggplot(sdlgs.nosoil, aes(x = cover , y = spp.no, colour=location, shape=location, fill=location)) + 
   geom_point(size = 3) +
   scale_shape_manual(values=c(16,17,15))+  # Use a square circle and triangle
   scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
@@ -1691,11 +1473,11 @@ ggsave("./Output/Fig6_18aug.eps", plot = multiplot(canopy.sdlgs.fig1,canopy.sdlg
 ### APPENDIX B: Correlations between environmental variables
 ############################################################################################################
 
-lb<-NEST.DATA.with.soilchem$litter.bmass
-sp<-NEST.DATA.with.soilchem$soil.pen
-gb<-NEST.DATA.with.soilchem$grass.bmass
-sh<-NEST.DATA.with.soilchem$soil.moisture.surface
-pc<-NEST.DATA.with.soilchem$perc.cover
+lb<-nest_data$litter.bmass
+sp<-nest_data$soil.pen
+gb<-nest_data$grass.bmass
+sh<-nest_data$soil.moisture.surface
+pc<-nest_data$cover
 
 # If you want to see the histograms...
 # hist(lb)
@@ -1718,13 +1500,13 @@ cor.test(pc,gb, method="spearman") #SIGNIFICANT (grass biomass & percent cover)
 cor.test(pc,sh, method="spearman") #SIGNIFICANT (soil moisture & percent cover)
 
 ####CORRELATIONS AMONG SOIL VARIABLES
-ph<-NEST.DATA.with.soilchem$ph
-P<-NEST.DATA.with.soilchem$P
-K<-NEST.DATA.with.soilchem$K
-Ca<-NEST.DATA.with.soilchem$Ca
-Mg<-NEST.DATA.with.soilchem$Mg
-Al<-NEST.DATA.with.soilchem$Al
-OM<-NEST.DATA.with.soilchem$org.mat
+ph<-nest_data$ph
+P<-nest_data$P
+K<-nest_data$K
+Ca<-nest_data$Ca
+Mg<-nest_data$Mg
+Al<-nest_data$Al
+OM<-nest_data$org.mat
 
 # If you want to see the histograms...
 # hist(ph)
@@ -1806,12 +1588,12 @@ cor.test(sh,OM) #SIGNIFICANT
 ### APPENDIX C FIGURES: Canopy Cover vs. Envt'l Variables
 ############################################################################################################
 
-NEST.DATA.with.soilchem<-NEST.DATA.both
+nest_data<-nest_data
 # A) grass.bmass
 
 # jpeg(file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al PeerJ (Ch2)/PeerJ v2/AppendixC-A.jpeg",
 #      width = 6, height = 4, units = "in", bg = "white", res = 300)
-grass.canopy<-ggplot(NEST.DATA.with.soilchem, aes(x = perc.cover, y = grass.bmass, colour=location, shape=location,fill=location)) + 
+grass.canopy<-ggplot(nest_data, aes(x = cover, y = grass.bmass, colour=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
   scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
   scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
@@ -1845,7 +1627,7 @@ grass.canopy
 # B) litter.bmass
 # jpeg(file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al PeerJ (Ch2)/PeerJ v2/AppendixC-B.jpeg",
 #      width = 6, height = 4, units = "in", bg = "white", res = 300)
-litter.canopy<-ggplot(NEST.DATA.with.soilchem, aes(x = perc.cover, y = litter.bmass, colour=location, shape=location,fill=location)) + 
+litter.canopy<-ggplot(nest_data, aes(x = cover, y = litter.bmass, colour=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
   scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
   scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
@@ -1877,7 +1659,7 @@ litter.canopy
 # C) soil.pen
 # jpeg(file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al PeerJ (Ch2)/PeerJ v2/AppendixC-C.jpeg",
 #      width = 6, height = 4, units = "in", bg = "white", res = 300)
-soil.canopy<-ggplot(NEST.DATA.with.soilchem, aes(x = perc.cover, y = soil.pen, colour=location, shape=location,fill=location)) + 
+soil.canopy<-ggplot(nest_data, aes(x = cover, y = soil.pen, colour=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
   scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
   scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
@@ -1907,7 +1689,7 @@ soil.canopy
 # D) soil.moisture.surface
 # jpeg(file="/Users/emiliobruna/Dropbox/SHARED FOLDERS/Alan/Costa et al PeerJ (Ch2)/PeerJ v2/AppendixC-D.jpeg",
 #      width = 6, height = 4, units = "in", bg = "white", res = 300)
-moisture.canopy<-ggplot(NEST.DATA.with.soilchem, aes(x = perc.cover, y = soil.moisture.surface, colour=location, shape=location,fill=location)) + 
+moisture.canopy<-ggplot(nest_data, aes(x = cover, y = soil.moisture.surface, colour=location, shape=location,fill=location)) + 
   geom_point(size = 3) +
   scale_shape_manual(values=c(15,16,17))+  # Use a square circle and triangle
   scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
@@ -1962,8 +1744,8 @@ ggsave("./Output/AppC-D.eps", moisture.canopy,device = "eps", scale = 1, width =
 ######################################################
 #  HISTOGRAM OF PLANT HEIGHT: APPENDIX D
 ######################################################
-  str(VEG_both)
-  ht_histogram<-ggplot(VEG_both, aes(x=ht_cm, fill=location)) + 
+  str(veg_data)
+  ht_histogram<-ggplot(veg_data, aes(x=ht_cm, fill=location)) + 
     geom_histogram(binwidth=15, position="dodge")
     ht_histogram<-ht_histogram+scale_fill_manual(values=c("#000066","#0072B2","#666666"))+
     ylab("Frequency") +
@@ -1990,16 +1772,16 @@ ggsave("./Output/AppC-D.eps", moisture.canopy,device = "eps", scale = 1, width =
 ############################################################################################################
 
 # This will calculate means of each column ignoring the NAs in each.
-# SUMM <- NEST.DATA.with.soilchem %>%
+# SUMM <- nest_data %>%
 #   group_by(location) %>%
 #   summarise_each(funs(mean(., na.rm = TRUE)))
 # 
-# SUMM <- NEST.DATA.with.soilchem %>%
+# SUMM <- nest_data %>%
 #   group_by(location) %>%
 #   summarise_each(funs(sd(., na.rm = TRUE)))
 
 # This will calculate means of each column ignoring the NAs in each.
-SUMM <- NEST.DATA.with.soilchem %>%
+SUMM <- nest_data %>%
   group_by(location) %>%
   summarise_each(funs(mean(., na.rm = TRUE)))
 
@@ -2014,7 +1796,7 @@ SUMM3 <- sdlgs.nosoil %>%
 sum(sdlgs.nosoil$sdlg.no)
 
 # This tells you the common species in our survey
-common.spp<-as.data.frame(count(VEG_both, species))
+common.spp<-as.data.frame(count(veg_data, species))
 common.spp<-common.spp[order(-common.spp$n),] #- to make it descending order
 
 
