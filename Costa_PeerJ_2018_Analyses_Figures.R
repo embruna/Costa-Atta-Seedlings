@@ -1230,7 +1230,7 @@ write.csv(reported.table.global6, file="./Output/global_7B.csv", row.names = F) 
 png(filename="cover.fig.gradient.png", width=400, height=400)
 cover.fig.gradient<-ggplot(nest_data, aes(x=perc.cover, fill=habitat)) +
   geom_histogram(binwidth=10, alpha=.7, position="identity", colour="black")+
-  scale_fill_grey(start=0.3, end=1, labels = c("Cerrado denso","Cerrado ralo"))+
+  scale_fill_grey(start=0.3, end=1, labels = c(" Cerrado denso"," Cerrado ralo"))+
   ylab("No. of plots") + 
   xlab("Canopy cover (%)")+
   annotate ("text", x=1, y=16, label="A", fontface="bold", size=8, color="black")+
@@ -1263,13 +1263,13 @@ dev.off()
 ############################################################################################################
 png(filename="cover.fig.location.png", width=400, height=400)
 # Fig 1B Canopy cover for each plot split by nest 
-cover.fig.location<-ggplot(data=DATA, aes(x=location, y=cover, group=nest)) +
+cover.fig.location<-ggplot(data=coverxhab, aes(x=location, y=perc.cover, group=nest)) +
   geom_line(size=0.5) + geom_point(size=4, aes(colour=location, shape=location))+
   ylab("Canopy cover (%)")+
   xlab("Plot location")+ 
   scale_y_continuous(limit=c(0, 100))+
   scale_colour_manual(values=c("#000066","#0072B2","#666666"))+
-  annotate ("text", x=0.5, y=99, label="B", fontface="bold", size=8, color="black")
+  annotate ("text", x=0.6, y=99, label="B", fontface="bold", size=8, color="black")
 
 cover.fig.location<-cover.fig.location + theme_classic() + theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
                                                                  axis.line.y = element_line(color="black", size = 0.5, lineend="square"),
